@@ -3,10 +3,10 @@
 # ============================================================================
 
 # ------------------------------------------------------------------
-# CREDENTIAL 1: Main Branch (For Plans)
+# CREDENTIAL 1: All Branches (For Plans)
 # ------------------------------------------------------------------
-Write-Host "[5/9] Creating federated credential for Main Branch..." -ForegroundColor Yellow
-$CRED_NAME = "GitHub-Actions-Main-Branch"
+Write-Host "[5/9] Creating federated credential for All Branches..." -ForegroundColor Yellow
+$CRED_NAME = "GitHub-Actions-All-Branches"
 $EXISTING_CRED = az ad app federated-credential list --id $script:APP_ID --query "[?name=='$CRED_NAME'].name" -o tsv
 
 if ($EXISTING_CRED) {
@@ -15,7 +15,7 @@ if ($EXISTING_CRED) {
     $credJson = @{
         name = $CRED_NAME
         issuer = "https://token.actions.githubusercontent.com"
-        subject = "repo:$($script:REPO):ref:refs/heads/main"
+        subject = "repo:$($script:REPO):ref:refs/heads/*"
         audiences = @("api://AzureADTokenExchange")
     } | ConvertTo-Json -Depth 10
 
@@ -24,7 +24,7 @@ if ($EXISTING_CRED) {
     
     az ad app federated-credential create --id $script:APP_ID --parameters "@$credFile"
     Remove-Item $credFile
-    Write-Host "[OK] Federated credential created for repo: $script:REPO (main branch)`n" -ForegroundColor Green
+    Write-Host "[OK] Federated credential created for repo: $script:REPO (all branches)`n" -ForegroundColor Green
 }
 
 # ------------------------------------------------------------------
