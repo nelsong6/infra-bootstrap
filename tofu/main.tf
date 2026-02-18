@@ -30,7 +30,13 @@ data "azurerm_resource_group" "main" {
 # The DNS zone is the shared domain infrastructure (romaine.life) used by
 # all applications. Each app creates its own subdomains under this zone.
 
-data "azurerm_dns_zone" "main" {
+resource "azurerm_dns_zone" "main" {
   name                = "romaine.life"
   resource_group_name = data.azurerm_resource_group.main.name
+
+  tags = {
+    Environment = "Production"
+    ManagedBy   = "Terraform"
+    Purpose     = "DNS"
+  }
 }

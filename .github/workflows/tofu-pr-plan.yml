@@ -44,13 +44,6 @@ jobs:
         tenant-id: 2236b5e4-81d2-4d82-bde5-17b1037999ea
         subscription-id: aee0cbd2-8074-4001-b610-0f8edb4eaa3c
 
-    - name: Create terraform.tfvars
-      run: |
-        cat > terraform.tfvars << EOF
-        github_repo   = "${{ github.repository }}"
-        github_branch = "${{ github.ref_name }}"
-        EOF
-
     - name: OpenTofu Init
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

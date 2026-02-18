@@ -12,7 +12,7 @@
 
 resource "azurerm_dns_ns_record" "main" {
   name                = "@" # Root domain
-  zone_name           = data.azurerm_dns_zone.main.name
+  zone_name           = azurerm_dns_zone.main.name
   resource_group_name = data.azurerm_resource_group.main.name
   ttl                 = 172800 # 48 hours - standard for NS records
 
@@ -37,7 +37,7 @@ resource "azurerm_dns_ns_record" "main" {
 # MX Records - Email delivery
 resource "azurerm_dns_mx_record" "email" {
   name                = "@" # Root domain
-  zone_name           = data.azurerm_dns_zone.main.name
+  zone_name           = azurerm_dns_zone.main.name
   resource_group_name = data.azurerm_resource_group.main.name
   ttl                 = 3600
 
@@ -61,7 +61,7 @@ resource "azurerm_dns_mx_record" "email" {
 # SPF Record - Email authentication
 resource "azurerm_dns_txt_record" "spf" {
   name                = "@" # Root domain
-  zone_name           = data.azurerm_dns_zone.main.name
+  zone_name           = azurerm_dns_zone.main.name
   resource_group_name = data.azurerm_resource_group.main.name
   ttl                 = 3600
 
@@ -79,7 +79,7 @@ resource "azurerm_dns_txt_record" "spf" {
 # Autoconfig - Email client configuration
 resource "azurerm_dns_cname_record" "autoconfig" {
   name                = "autoconfig"
-  zone_name           = data.azurerm_dns_zone.main.name
+  zone_name           = azurerm_dns_zone.main.name
   resource_group_name = data.azurerm_resource_group.main.name
   ttl                 = 3600
   record              = "privateemail.com"
@@ -94,7 +94,7 @@ resource "azurerm_dns_cname_record" "autoconfig" {
 # Autodiscover - Email client configuration
 resource "azurerm_dns_cname_record" "autodiscover" {
   name                = "autodiscover"
-  zone_name           = data.azurerm_dns_zone.main.name
+  zone_name           = azurerm_dns_zone.main.name
   resource_group_name = data.azurerm_resource_group.main.name
   ttl                 = 3600
   record              = "privateemail.com"

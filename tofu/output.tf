@@ -29,17 +29,17 @@ output "resource_group_id" {
 # ============================================================================
 
 output "dns_zone_name" {
-  value       = data.azurerm_dns_zone.main.name
+  value       = azurerm_dns_zone.main.name
   description = "Name of the shared DNS zone (e.g., romaine.life)"
 }
 
 output "dns_zone_id" {
-  value       = data.azurerm_dns_zone.main.id
+  value       = azurerm_dns_zone.main.id
   description = "Resource ID of the shared DNS zone"
 }
 
 output "dns_zone_nameservers" {
-  value       = data.azurerm_dns_zone.main.name_servers
+  value       = azurerm_dns_zone.main.name_servers
   description = "Azure DNS nameservers for the domain (configure these at your registrar)"
 }
 
@@ -72,8 +72,8 @@ output "usage_instructions" {
   
   ✅ Resource Group:  ${data.azurerm_resource_group.main.name}
   ✅ Location:        ${data.azurerm_resource_group.main.location}
-  ✅ DNS Zone:        ${data.azurerm_dns_zone.main.name}
-  ✅ Nameservers:     ${join(", ", data.azurerm_dns_zone.main.name_servers)}
+  ✅ DNS Zone:        ${azurerm_dns_zone.main.name}
+  ✅ Nameservers:     ${join(", ", azurerm_dns_zone.main.name_servers)}
   
   ====================================================================================================
   Deploying Applications
