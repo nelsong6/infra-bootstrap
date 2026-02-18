@@ -48,7 +48,7 @@ resource "azurerm_container_app_environment" "main" {
 # Applications can create their own databases within this account
 
 resource "azurerm_cosmosdb_account" "main" {
-  name                = "infra-cosmos-${random_string.suffix.result}"
+  name                = "infra-cosmos"
   resource_group_name = data.azurerm_resource_group.main.name
   location            = data.azurerm_resource_group.main.location
   offer_type          = "Standard"
