@@ -16,7 +16,7 @@ terraform {
     resource_group_name  = "infra"
     storage_account_name = "tfstate6792"
     container_name       = "tfstate"
-    key                  = "terraform.tfstate"
+    key                  = "infra.tfstate"
     use_oidc             = true
   }
 }
