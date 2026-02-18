@@ -216,7 +216,6 @@ jobs:
         echo "tenant_id=$(tofu output -raw azure_tenant_id || echo 'N/A')" >> $GITHUB_OUTPUT
         echo "subscription_id=$(tofu output -raw azure_subscription_id || echo 'N/A')" >> $GITHUB_OUTPUT
         echo "resource_group_name=$(tofu output -raw resource_group_name || echo 'N/A')" >> $GITHUB_OUTPUT
-        echo "static_web_app_name=$(tofu output -raw static_web_app_name || echo 'N/A')" >> $GITHUB_OUTPUT
 
     - name: Deployment Summary
       run: |
@@ -233,6 +232,5 @@ jobs:
           echo "AZURE_TENANT_ID       = ${{ steps.outputs.outputs.tenant_id }}" >> $GITHUB_STEP_SUMMARY
           echo "AZURE_SUBSCRIPTION_ID = ${{ steps.outputs.outputs.subscription_id }}" >> $GITHUB_STEP_SUMMARY
           echo "RESOURCE_GROUP_NAME   = ${{ steps.outputs.outputs.resource_group_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "STATIC_WEB_APP_NAME   = ${{ steps.outputs.outputs.static_web_app_name }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         fi
