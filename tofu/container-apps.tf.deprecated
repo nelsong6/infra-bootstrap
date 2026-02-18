@@ -1,0 +1,133 @@
+# ============================================================================
+# Azure Container Apps (Serverless Container Hosting)
+# ============================================================================
+
+# Import existing Container App
+import {
+  to = azurerm_container_app.workout_api
+  id = "/subscriptions/aee0cbd2-8074-4001-b610-0f8edb4eaa3c/resourceGroups/workout-rg/providers/Microsoft.App/containerApps/workout-api"
+}
+
+# Container App Environment (shared infrastructure)
+resource "azurerm_container_app_environment" "workout" {
+  name                = "workout-env-${random_string.suffix.result}"
+  resource_group_name = data.azurerm_resource_group.workout.name
+  location            = data.azurerm_resource_group.workout.location
+
+  tags = {
+    Environment = "Production"
+    Project     = "WorkoutTracker"
+  }
+}
+
+# Container App for the backend API
+resource "azurerm_container_app" "workout_api" {
+  name                         = "workout-api"
+  resource_group_name          = data.azurerm_resource_group.workout.name
+  container_app_environment_id = azurerm_container_app_environment.workout.id
+  revision_mode                = "Single"
+
+  # Enable system-assigned managed identity
+  identity {
+    type = "SystemAssigned"
+  }
+
+  # Container configuration
+  template {
+    container {
+      name = "workout-api"
+      # 🚀 Pull from GitHub Container Registry (Public)
+      image  = "ghcr.io/nelsong6/kill-me/workout-api:latest"
+      cpu    = 0.25
+      memory = "0.5Gi"
+
+      # Environment variables
+      env {
+        name  = "COSMOS_DB_ENDPOINT"
+        value = azurerm_cosmosdb_account.workout.endpoint
+      }
+
+      env {
+        name  = "COSMOS_DB_DATABASE_NAME"
+        value = azurerm_cosmosdb_sql_database.workout.name
+      }
+
+      env {
+        name  = "COSMOS_DB_CONTAINER_NAME"
+        value = azurerm_cosmosdb_sql_container.workouts.name
+      }
+
+      env {
+        name  = "PORT"
+        value = "3000"
+      }
+
+      # Frontend URL provided to app logic if needed (e.g. for App-level validation)
+      env {
+        name  = "FRONTEND_URL"
+        value = "https://workout.romaine.life"
+      }
+    }
+
+    min_replicas = 0 # Scale to zero when not in use
+    max_replicas = 3
+  }
+
+  # Ingress configuration
+  ingress {
+    external_enabled = true
+    target_port      = 3000
+
+    traffic_weight {
+      latest_revision = true
+      percentage      = 100
+    }
+
+    # 🔒 NATIVE CORS POLICY (Corrected for azurerm v4.x)
+    # The block name is 'cors', not 'cors_policy'
+    cors {
+      allowed_origins = [
+        # 1. Production: Custom Domain
+        "https://workout.romaine.life",
+
+        # 2. Production: Default Azure hostname (fallback during setup)
+        "https://${azurerm_static_web_app.workout.default_host_name}",
+
+        # 3. Development: Localhost ports for Vite
+        "http://localhost:5173",
+        "http://localhost:4173"
+      ]
+
+      allowed_methods           = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+      allowed_headers           = ["*"]
+      exposed_headers           = ["*"]
+      max_age_in_seconds        = 3600
+      allow_credentials_enabled = true
+    }
+  }
+
+  tags = {
+    Environment = "Production"
+    Project     = "WorkoutTracker"
+  }
+}
+
+# Grant Container App managed identity access to Cosmos DB
+resource "azurerm_cosmosdb_sql_role_assignment" "container_app_cosmos" {
+  resource_group_name = data.azurerm_resource_group.workout.name
+  account_name        = azurerm_cosmosdb_account.workout.name
+  role_definition_id  = "${azurerm_cosmosdb_account.workout.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002" # Built-in Data Contributor
+  principal_id        = azurerm_container_app.workout_api.identity[0].principal_id
+  scope               = azurerm_cosmosdb_account.workout.id
+}
+
+# Outputs
+output "container_app_url" {
+  value       = "https://${azurerm_container_app.workout_api.ingress[0].fqdn}"
+  description = "URL of the Container App backend API"
+}
+
+output "container_app_name" {
+  value       = azurerm_container_app.workout_api.name
+  description = "Name of the Container App"
+}
