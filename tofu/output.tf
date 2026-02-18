@@ -44,6 +44,39 @@ output "dns_zone_nameservers" {
 }
 
 # ============================================================================
+# Container App Environment Outputs
+# ============================================================================
+
+output "container_app_environment_name" {
+  value       = azurerm_container_app_environment.main.name
+  description = "Name of the shared Container App Environment"
+}
+
+output "container_app_environment_id" {
+  value       = azurerm_container_app_environment.main.id
+  description = "Resource ID of the shared Container App Environment"
+}
+
+# ============================================================================
+# Cosmos DB Outputs
+# ============================================================================
+
+output "cosmos_db_account_name" {
+  value       = azurerm_cosmosdb_account.main.name
+  description = "Name of the shared Cosmos DB account"
+}
+
+output "cosmos_db_account_id" {
+  value       = azurerm_cosmosdb_account.main.id
+  description = "Resource ID of the shared Cosmos DB account"
+}
+
+output "cosmos_db_endpoint" {
+  value       = azurerm_cosmosdb_account.main.endpoint
+  description = "Endpoint URL for the Cosmos DB account"
+}
+
+# ============================================================================
 # Azure Identity Outputs
 # ============================================================================
 
@@ -70,10 +103,13 @@ output "usage_instructions" {
   
   This infrastructure provides shared resources for all applications:
   
-  ✅ Resource Group:  ${data.azurerm_resource_group.main.name}
-  ✅ Location:        ${data.azurerm_resource_group.main.location}
-  ✅ DNS Zone:        ${azurerm_dns_zone.main.name}
-  ✅ Nameservers:     ${join(", ", azurerm_dns_zone.main.name_servers)}
+  ✅ Resource Group:          ${data.azurerm_resource_group.main.name}
+  ✅ Location:                ${data.azurerm_resource_group.main.location}
+  ✅ DNS Zone:                ${azurerm_dns_zone.main.name}
+  ✅ Nameservers:             ${join(", ", azurerm_dns_zone.main.name_servers)}
+  ✅ Container Environment:   ${azurerm_container_app_environment.main.name}
+  ✅ Cosmos DB Account:       ${azurerm_cosmosdb_account.main.name}
+  ✅ Cosmos DB Endpoint:      ${azurerm_cosmosdb_account.main.endpoint}
   
   ====================================================================================================
   Deploying Applications
