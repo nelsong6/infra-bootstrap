@@ -1,27 +1,12 @@
 # ============================================================================
-# Shared DNS Configuration - Email Records
+# DNS Zone
 # ============================================================================
-# This file contains DNS records that are shared across the domain, such as
-# email (MX, SPF) and autodiscover records. App-specific DNS records are
-# managed by the azure-app module in each app's repository.
-# ============================================================================
+# The DNS zone is the shared domain infrastructure (romaine.life) used by
+# all applications. Each app creates its own subdomains under this zone.
 
-# ============================================================================
-# Name Server Records
-# ============================================================================
-
-resource "azurerm_dns_ns_record" "main" {
-  name                = "@" # Root domain
-  zone_name           = azurerm_dns_zone.main.name
+resource "azurerm_dns_zone" "main" {
+  name                = "romaine.life"
   resource_group_name = data.azurerm_resource_group.main.name
-  ttl                 = 172800 # 48 hours - standard for NS records
-
-  records = [
-    "ns1-09.azure-dns.com.",
-    "ns2-09.azure-dns.net.",
-    "ns3-09.azure-dns.org.",
-    "ns4-09.azure-dns.info.",
-  ]
 
   tags = {
     Environment = "Production"
@@ -29,6 +14,14 @@ resource "azurerm_dns_ns_record" "main" {
     Purpose     = "DNS"
   }
 }
+
+# ============================================================================
+# Shared DNS Configuration - Email Records
+# ============================================================================
+# This file contains DNS records that are shared across the domain, such as
+# email (MX, SPF) and autodiscover records. App-specific DNS records are
+# managed by the azure-app module in each app's repository.
+# ============================================================================
 
 # ============================================================================
 # Email DNS Records (Namecheap Private Email)
