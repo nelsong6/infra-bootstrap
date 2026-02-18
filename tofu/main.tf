@@ -6,14 +6,6 @@
 # azure-app module in their respective repositories.
 # ============================================================================
 
-# Random suffix for globally unique names
-resource "random_string" "suffix" {
-  length  = 6
-  special = false
-  upper   = false
-}
-
-# ============================================================================
 # Resource Group
 # ============================================================================
 # The resource group is created by bootstrap.ps1 and referenced here as data
