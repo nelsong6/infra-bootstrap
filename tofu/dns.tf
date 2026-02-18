@@ -7,6 +7,30 @@
 # ============================================================================
 
 # ============================================================================
+# Name Server Records
+# ============================================================================
+
+resource "azurerm_dns_ns_record" "main" {
+  name                = "@" # Root domain
+  zone_name           = data.azurerm_dns_zone.main.name
+  resource_group_name = data.azurerm_resource_group.main.name
+  ttl                 = 172800 # 48 hours - standard for NS records
+
+  records = [
+    "ns1-09.azure-dns.com.",
+    "ns2-09.azure-dns.net.",
+    "ns3-09.azure-dns.org.",
+    "ns4-09.azure-dns.info.",
+  ]
+
+  tags = {
+    Environment = "Production"
+    ManagedBy   = "Terraform"
+    Purpose     = "DNS"
+  }
+}
+
+# ============================================================================
 # Email DNS Records (Namecheap Private Email)
 # ============================================================================
 

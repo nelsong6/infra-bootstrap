@@ -7,11 +7,11 @@ locals {
   github_parts     = split("/", var.github_repo)
   github_owner     = local.github_parts[0]
   github_repo_name = local.github_parts[1]
-  
+
   # Construct full domain names
   frontend_domain = "${var.custom_domain_subdomain}.${var.dns_zone_name}"
   backend_domain  = "api.${var.custom_domain_subdomain}.${var.dns_zone_name}"
-  
+
   # Default tags merged with custom tags
   default_tags = {
     Environment = var.environment

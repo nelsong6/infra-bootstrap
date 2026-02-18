@@ -62,7 +62,7 @@ output "azure_tenant_id" {
 # ============================================================================
 
 output "usage_instructions" {
-  value = <<-EOT
+  value       = <<-EOT
   
   ====================================================================================================
   Shared Infrastructure - Successfully Deployed

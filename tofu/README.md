@@ -1,256 +1,324 @@
-# Terraform/OpenTofu Infrastructure Configuration
+# OpenTofu Shared Infrastructure Configuration
 
-This directory contains Infrastructure as Code (IaC) for the Workout Tracker application.
+This directory contains Infrastructure as Code (IaC) for the **shared foundational resources** used across all applications.
 
 ## 📁 Files Overview
 
 | File | Purpose |
 |------|---------|
-| `main.tf` | Core infrastructure: Static Web App, Cosmos DB |
-| `container-apps.tf` | Backend API hosting with Azure Container Apps |
-| `dns.tf` | Custom domain configuration for workout.romaine.life |
-| `auth.tf` | OIDC authentication for GitHub Actions |
-| `provider.tf` | Terraform provider configuration |
-| `variables.tf` | Input variables |
-| `output.tf` | Output values for CI/CD |
-| `bootstrap.ps1` | Bootstrap script for initial Azure AD setup |
-| `bootstrap-dns.ps1` | **NEW:** Bootstrap script for DNS zone creation |
+| `main.tf` | Core shared resources: Resource Group, DNS Zone |
+| `dns.tf` | Domain-wide DNS configuration (email, MX, SPF records) |
+| `auth.tf` | Azure client configuration for OIDC authentication |
+| `provider.tf` | OpenTofu provider and backend configuration |
+| `variables.tf` | Input variables (minimal for shared infrastructure) |
+| `output.tf` | Output values for app repositories to consume |
+| `terraform.tfvars` | Variable values (GitHub repo reference) |
 
 ## 🚀 Quick Start
 
 ### Initial Setup (One-Time)
 
-1. **Bootstrap Azure AD & Terraform State**
-   ```powershell
-   cd tofu
-   .\bootstrap.ps1
-   ```
-   This creates the App Registration and Terraform state storage.
+**Prerequisites:**
+- Azure subscription with Owner/Contributor permissions
+- Azure CLI authenticated (`az login`)
+- Bootstrap process completed (see [../bootstrap/README.md](../bootstrap/README.md))
+- GitHub repository variables configured (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`)
 
-2. **Configure GitHub Repository**
-   - Go to: Settings → Secrets and variables → Actions → Variables
-   - Add the variables displayed by the bootstrap script:
-     - `AZURE_CLIENT_ID`
-     - `AZURE_TENANT_ID`
-     - `AZURE_SUBSCRIPTION_ID`
+### Deploy Shared Infrastructure
 
-3. **Deploy Infrastructure**
-   ```powershell
-   tofu init
-   tofu plan
-   tofu apply
-   ```
+**Option 1: Via GitHub Actions (Recommended)**
 
-### Custom Domain Setup (Optional)
+1. Go to **Actions** tab in GitHub
+2. Select **"OpenTofu Infrastructure"** workflow
+3. Click **"Run workflow"**
+4. Choose action:
+   - `plan` - Preview changes
+   - `apply` - Deploy/update infrastructure
+   - `destroy` - Remove all resources
+5. Click **"Run workflow"**
 
-To use `workout.romaine.life` instead of the default Azure URLs:
+**Option 2: Locally**
 
-1. **Bootstrap DNS Zone**
-   ```powershell
-   .\bootstrap-dns.ps1
-   ```
-
-2. **Update Domain Registrar**
-   - Configure nameservers (displayed by bootstrap script)
-   - Wait for DNS propagation (1-48 hours)
-
-3. **Apply DNS Configuration**
-   ```powershell
-   tofu apply
-   ```
-
-4. **Verify Setup**
-   ```powershell
-   # Test domains
-   curl https://workout.romaine.life
-   curl https://api.workout.romaine.life/health
-   ```
-
-**For detailed instructions, see:** [CUSTOM_DOMAIN_SETUP.md](./CUSTOM_DOMAIN_SETUP.md)
-
-## 📋 Documentation
-
-- [BOOTSTRAP.md](./BOOTSTRAP.md) - Initial Azure AD and GitHub setup
-- [CUSTOM_DOMAIN_SETUP.md](./CUSTOM_DOMAIN_SETUP.md) - Custom domain configuration
-- [CORS_SETUP.md](./CORS_SETUP.md) - CORS configuration notes
+```powershell
+cd tofu
+tofu init
+tofu plan
+tofu apply
+```
 
 ## 🏗️ Architecture
 
+This shared infrastructure provides foundational resources for all applications:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Azure Resource Group                      │
-│                       (workout-rg)                           │
+│           Shared Infrastructure (Resource Group: infra)      │
 ├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────────────┐         ┌──────────────────┐          │
-│  │  Static Web App  │────────▶│  Container App   │          │
-│  │    (Frontend)    │  HTTPS  │   (Backend API)  │          │
-│  │  React + Vite    │         │   Node.js + SDK  │          │
-│  └──────────────────┘         └──────────────────┘          │
-│          │                             │                     │
-│          │                             │                     │
-│          │                    ┌────────▼────────┐            │
-│          │                    │   Cosmos DB     │            │
-│          └───────────────────▶│  (NoSQL, Free)  │            │
-│              (for frontend     └─────────────────┘            │
-│               static hosting)                                 │
-│                                                               │
-│  ┌──────────────────────────────────────────────┐            │
-│  │          Azure DNS Zone                      │            │
-│  │  - workout.romaine.life → Static Web App    │            │
-│  │  - api.workout.romaine.life → Container App │            │
-│  └──────────────────────────────────────────────┘            │
-│                                                               │
+│                                                              │
+│  ✅ Resource Group (infra)                                  │
+│     - Centralized resource management                       │
+│     - Azure location: eastus2                               │
+│                                                              │
+│  ✅ DNS Zone (romaine.life)                                 │
+│     - Domain-wide DNS management                            │
+│     - Nameservers configured at registrar                   │
+│                                                              │
+│  ✅ Email DNS Records                                       │
+│     - MX records (Namecheap Private Email)                  │
+│     - SPF record for authentication                         │
+│     - Autoconfig/Autodiscover for email clients            │
+│                                                              │
+│  ✅ OpenTofu State Backend                                  │
+│     - Azure Storage Account: tfstate4807                    │
+│     - Container: tfstate                                    │
+│     - State file: infra.tfstate                            │
+│                                                              │
 └─────────────────────────────────────────────────────────────┘
+                        ▲
+                        │ Remote State Reference
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
+┌───────▼──────┐ ┌──────▼─────┐ ┌──────▼─────┐
+│  workout-app │ │  notes-app │ │ future-app │
+│              │ │            │ │            │
+│ References   │ │References  │ │References  │
+│ infra state  │ │infra state │ │infra state │
+└──────────────┘ └────────────┘ └────────────┘
 ```
+
+## 📋 What's Managed Here
+
+### Resources Defined as Data Sources
+- **Resource Group**: Created by bootstrap script, referenced here
+- **DNS Zone**: Created by bootstrap script, referenced here
+
+### Resources Managed by OpenTofu
+- **Email DNS Records**: MX, SPF, autoconfig, autodiscover
+- Future shared resources (load balancers, shared app insights, etc.)
 
 ## 🔐 Security & Authentication
 
 ### GitHub Actions → Azure
 - **Method:** OIDC (Workload Identity Federation)
 - **No secrets stored** - Uses federated credentials
-- **Configured in:** `auth.tf` and `bootstrap.ps1`
+- **Configured in:** `auth.tf` and bootstrap scripts
 
-### Container App → Cosmos DB
-- **Method:** Managed Identity (RBAC)
-- **No connection strings** - Uses Azure Identity SDK
-- **Role:** Cosmos DB Data Contributor
+### Backend State Storage
+- **Authentication:** OIDC (`use_oidc = true`)
+- **State file:** `infra.tfstate`
+- **Access:** Restricted to service principal with proper roles
 
-### Static Web App & Container App
-- **SSL:** Azure-managed certificates (automatic, free)
-- **CORS:** Configured in `container-apps.tf`
+## 🌍 Outputs for App Repositories
 
-## 🌍 Deployed Resources
+This infrastructure exposes outputs that app repositories consume via remote state:
 
-After running `tofu apply`, these resources are created:
+| Output | Description | Used By Apps For |
+|--------|-------------|------------------|
+| `resource_group_name` | Name of shared resource group | Deploying resources |
+| `resource_group_location` | Azure region | Resource placement |
+| `resource_group_id` | Resource group ID | Resource references |
+| `dns_zone_name` | Domain name (romaine.life) | Custom domain setup |
+| `dns_zone_id` | DNS zone resource ID | Creating DNS records |
+| `dns_zone_nameservers` | Azure DNS nameservers | Domain verification |
+| `azure_subscription_id` | Azure subscription ID | Provider config |
+| `azure_tenant_id` | Azure tenant ID | Provider config |
 
-| Resource | Type | Purpose |
-|----------|------|---------|
-| `workout-rg` | Resource Group | Container for all resources |
-| `workout-app-*` | Static Web App | Frontend hosting (React app) |
-| `workout-cosmos-*` | Cosmos DB Account | NoSQL database |
-| `WorkoutTrackerDB` | Cosmos DB Database | Database container |
-| `workouts` | Cosmos DB Container | Workout data storage |
-| `workout-env-*` | Container App Environment | Backend hosting infrastructure |
-| `workout-api` | Container App | Backend API (Node.js) |
-| `romaine.life` | DNS Zone | Custom domain management *(optional)* |
+### Example: App Repository Usage
+
+```hcl
+# In your app repository's Terraform configuration
+data "terraform_remote_state" "infra" {
+  backend = "azurerm"
+  config = {
+    resource_group_name  = "infra"
+    storage_account_name = "tfstate4807"
+    container_name       = "tfstate"
+    key                  = "infra.tfstate"
+    use_oidc             = true
+  }
+}
+
+# Use the outputs
+module "my_app" {
+  source = "git::https://github.com/nelsong6/infra-bootstrap.git//modules/azure-app?ref=main"
+  
+  resource_group_name = data.terraform_remote_state.infra.outputs.resource_group_name
+  location            = data.terraform_remote_state.infra.outputs.resource_group_location
+  dns_zone_name       = data.terraform_remote_state.infra.outputs.dns_zone_name
+  dns_zone_id         = data.terraform_remote_state.infra.outputs.dns_zone_id
+  
+  # ... app-specific configuration
+}
+```
 
 ## 💰 Cost Estimation
 
-### Free Tier Resources
-- ✅ **Static Web Apps:** Free tier (100GB bandwidth/month)
-- ✅ **Cosmos DB:** Free tier (1000 RU/s, 25GB storage)
+### Shared Infrastructure Costs
+- 💵 **Azure DNS Zone:** ~$0.50/month per zone + $0.40 per million queries
+- ✅ **Storage Account (State):** Free tier (first 5GB, minimal transactions)
+- ✅ **Resource Group:** Free (container for resources)
 
-### Pay-Per-Use Resources
-- 💵 **Container Apps:** ~$5-10/month (with scale-to-zero enabled)
-- 💵 **Azure DNS:** ~$0.50/month per zone + $0.40 per million queries
+**Estimated Total:** ~$0.50-1.00/month
 
-**Estimated Total:** $5-11/month
+*Individual app costs are managed in their respective repositories.*
 
 ## 🔄 CI/CD Integration
 
-The infrastructure is deployed automatically via GitHub Actions:
-
-**Workflow:** `.github/workflows/terraform.yml`
+**Workflow:** `.github/workflows/terraform.yml` (in root of repo)
 
 **Triggers:**
-- Manual workflow dispatch (plan/apply/destroy)
+- Manual workflow dispatch (`plan`, `apply`, `destroy`)
 - Pull requests (plan only)
 - Push to main (plan only, when .tf files change)
 
-**Outputs automatically configured in GitHub:**
-- `STATIC_WEB_APP_NAME`
-- `RESOURCE_GROUP_NAME`
-- `COSMOS_DB_DATABASE_NAME`
-- `COSMOS_DB_CONTAINER_NAME`
+**Safety:**
+- Destructive operations (`apply`, `destroy`) require manual approval
+- Protected branch rules prevent unauthorized changes
+- State locking prevents concurrent modifications
 
 ## 🛠️ Common Operations
 
 ### View Current Infrastructure
+
 ```powershell
-# List all resources
-az resource list --resource-group workout-rg --output table
+# List all resources in shared resource group
+az resource list --resource-group infra --output table
 
-# Check Static Web App
-az staticwebapp show --name workout-app-* --resource-group workout-rg
+# View DNS zone details
+az network dns zone show --name romaine.life --resource-group infra
 
-# Check Container App status
-az containerapp show --name workout-api --resource-group workout-rg
+# Check DNS nameservers
+az network dns zone show --name romaine.life --resource-group infra --query nameServers
+
+# View DNS records
+az network dns record-set list --zone-name romaine.life --resource-group infra --output table
 ```
 
-### View Logs
+### View State
+
 ```powershell
-# Container App logs (live)
-az containerapp logs show \
-  --name workout-api \
-  --resource-group workout-rg \
-  --follow
+cd tofu
+tofu state list
+tofu show
 ```
 
-### Update Container App
-```powershell
-# Scale replicas
-az containerapp update \
-  --name workout-api \
-  --resource-group workout-rg \
-  --min-replicas 0 \
-  --max-replicas 5
-```
+### Add New Shared Resources
 
-### Destroy Everything
-```powershell
-# Via Terraform
-tofu destroy
+1. Add resource definition to appropriate `.tf` file
+2. Run `tofu plan` to preview changes
+3. Commit and push to trigger GitHub Actions
+4. Review plan in Actions output
+5. Manually trigger `apply` action
 
-# Or manually delete resource group
-az group delete --name workout-rg --yes --no-wait
-```
+### Update DNS Records
+
+Edit `dns.tf` and follow the standard workflow (plan → review → apply).
 
 ## 🐛 Troubleshooting
 
-### "Error: Unauthorized" in GitHub Actions
-- Verify GitHub variables are set correctly
-- Check federated credential matches repository name
-- Ensure service principal has proper roles
+### "Error: Resource Group not found"
+The bootstrap process must create the resource group first:
+```powershell
+cd bootstrap
+.\00-bootstrap.ps1
+```
+
+### "Error: DNS Zone not found"
+Ensure the DNS zone exists and is in the correct resource group:
+```powershell
+az network dns zone list --output table
+```
 
 ### "Error: Backend initialization required"
+Re-initialize the backend:
 ```powershell
 tofu init -reconfigure
 ```
 
-### "Error: Resource already exists"
-```powershell
-# Import existing resource
-tofu import azurerm_resource_group.workout /subscriptions/.../resourceGroups/workout-rg
+### "Error: Unauthorized" in GitHub Actions
+- Verify GitHub variables are set correctly (`AZURE_CLIENT_ID`, etc.)
+- Check federated credential matches repository name
+- Ensure service principal has proper roles
+
+## 📚 Documentation
+
+- **[Bootstrap Guide](../bootstrap/README.md)** - Initial setup and prerequisites
+- **[App Repo Setup](../docs/APP_REPO_SETUP.md)** - Creating new applications
+- **[Azure App Module](../modules/azure-app/README.md)** - Reusable app deployment module
+- **[Migration Guide](../docs/MIGRATION.md)** - Migrating existing resources
+
+## 🎯 Design Principles
+
+### Why Shared Infrastructure?
+
+**Benefits:**
+- ✅ **Single Source of Truth**: One DNS zone for all apps
+- ✅ **Cost Efficient**: Shared resources reduce duplication
+- ✅ **Centralized Management**: Domain-wide settings in one place
+- ✅ **Consistent Configuration**: All apps use same foundation
+- ✅ **Simplified Onboarding**: New apps reference existing infrastructure
+
+### What Belongs Here?
+
+**Include:**
+- ✅ Resource groups used by multiple apps
+- ✅ DNS zones and domain-wide DNS records
+- ✅ Shared networking (VNets, subnets)
+- ✅ Shared monitoring (Application Insights, Log Analytics)
+- ✅ Centralized security resources
+
+**Exclude:**
+- ❌ App-specific resources (Static Web Apps, Container Apps, Cosmos DB)
+- ❌ App-specific DNS records (subdomains)
+- ❌ App-specific configuration
+- ❌ Application code or deployment
+
+*App-specific resources should use the `azure-app` module in their own repositories.*
+
+## 🔒 State Management
+
+### Backend Configuration
+
+```hcl
+backend "azurerm" {
+  resource_group_name  = "infra"
+  storage_account_name = "tfstate4807"
+  container_name       = "tfstate"
+  key                  = "infra.tfstate"
+  use_oidc             = true
+}
 ```
 
-### Custom Domain Issues
-See [CUSTOM_DOMAIN_SETUP.md](./CUSTOM_DOMAIN_SETUP.md) troubleshooting section.
+### State File Structure
 
-## 📚 Additional Resources
+```
+Azure Storage Account: tfstate4807
+└── Container: tfstate
+    ├── infra.tfstate           # ← This infrastructure
+    ├── workout-app.tfstate     # App-specific state
+    ├── notes-app.tfstate       # App-specific state
+    └── future-app.tfstate      # App-specific state
+```
 
-- [Azure Static Web Apps Documentation](https://learn.microsoft.com/en-us/azure/static-web-apps/)
-- [Azure Container Apps Documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
-- [Azure Cosmos DB Documentation](https://learn.microsoft.com/en-us/azure/cosmos-db/)
-- [OpenTofu Documentation](https://opentofu.org/docs/)
-- [Terraform AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+Each repository maintains its own state file in the shared storage account.
 
-## 🎯 Environment Variables
+## 📖 Next Steps
 
-These are automatically configured by Terraform:
+After deploying shared infrastructure:
 
-**Backend Container App:**
-- `COSMOS_DB_ENDPOINT` - Cosmos DB endpoint URL
-- `COSMOS_DB_DATABASE_NAME` - Database name
-- `COSMOS_DB_CONTAINER_NAME` - Container name
-- `FRONTEND_URL` - Frontend URL (for CORS validation)
-- `PORT` - Container port (3000)
+1. ✅ **Verify DNS nameservers** at your domain registrar
+2. 📱 **Create app repositories** - Follow [APP_REPO_SETUP.md](../docs/APP_REPO_SETUP.md)
+3. 🚀 **Deploy applications** - Use the `azure-app` module
+4. 📊 **Monitor costs** - Review Azure Cost Management
+5. 🔒 **Review security** - Ensure RBAC and OIDC are configured
 
-**GitHub Actions (via outputs):**
-- `AZURE_CLIENT_ID` - Service principal client ID
-- `AZURE_TENANT_ID` - Azure tenant ID
-- `AZURE_SUBSCRIPTION_ID` - Azure subscription ID
+## 🆘 Getting Help
+
+- **Bootstrap Issues**: See [bootstrap/README.md](../bootstrap/README.md)
+- **App Deployment**: See [docs/APP_REPO_SETUP.md](../docs/APP_REPO_SETUP.md)
+- **Module Reference**: See [modules/azure-app/README.md](../modules/azure-app/README.md)
 
 ---
 
-**Questions?** Check the documentation files in this directory or review the inline comments in the `.tf` files.
+**Questions?** Check the documentation files in the parent directory or review inline comments in the `.tf` files.

@@ -21,6 +21,6 @@ Write-Host "================================================`n" -ForegroundColor
 
 Write-Host "Next Steps:" -ForegroundColor Cyan
 Write-Host "1. Commit the generated backend.tf file" -ForegroundColor White
-Write-Host "2. Run: cd tofu && tofu init" -ForegroundColor White
+Write-Host "2. Run: cd tofu; tofu init" -ForegroundColor White
 Write-Host "3. Run: tofu plan" -ForegroundColor White
 Write-Host "4. Deploy via GitHub Actions workflow`n" -ForegroundColor White

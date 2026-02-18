@@ -1,0 +1,260 @@
+name: Tofu
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'OpenTofu action to perform'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+  push:
+    branches: ['**']
+    paths:
+      - 'tofu/**'
+      - '.github/workflows/opentofu.yml'
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'tofu/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  actions: write
+
+env:
+  TOFU_VERSION: 'latest' 
+  WORKING_DIR: './tofu'
+
+jobs:
+  plan:
+    name: OpenTofu Plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    outputs:
+      should_apply: ${{ steps.analyze.outputs.should_apply }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_version: ${{ env.TOFU_VERSION }}
+
+    - name: Azure Login via OIDC
+      uses: azure/login@v1
+      with:
+        client-id: 043b35c3-f5de-4578-acd2-8b8f4c78f461
+        tenant-id: 2236b5e4-81d2-4d82-bde5-17b1037999ea
+        subscription-id: aee0cbd2-8074-4001-b610-0f8edb4eaa3c
+
+    - name: Create terraform.tfvars
+      run: |
+        cat > terraform.tfvars << EOF
+        github_repo   = "${{ github.repository }}"
+        github_branch = "${{ github.ref_name }}"
+        EOF
+
+    - name: OpenTofu Init
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: tofu init
+
+    - name: OpenTofu Validate
+      run: tofu validate -no-color
+
+    # 🟢 PLAN (Create/Update)
+    - name: OpenTofu Plan (Create)
+      id: plan-create
+      if: github.event.inputs.action != 'destroy'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Run plan and pipe output to file AND console (tee)
+        # We removed -detailed-exitcode so this will return 0 on success
+        tofu plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
+        
+        # ERROR DETECTION LOGIC
+        # Check if "Error:" appears in the output
+        if grep -q "Error:" plan_output.txt; then
+          echo "❌ ERROR DETECTED in OpenTofu output!"
+          cat plan_output.txt
+          exit 1
+        fi
+        
+        # STRING MATCHING LOGIC
+        # We search for the specific phrase Tofu prints when there is nothing to do.
+        if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
+          echo "✅ Detected 'No changes' phrase."
+          echo "any_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️ 'No changes' phrase NOT found -> Assuming changes exist."
+          echo "any_changes=true" >> $GITHUB_OUTPUT
+        fi
+
+    # 🔴 PLAN (Destroy)
+    - name: OpenTofu Plan (Destroy)
+      id: plan-destroy
+      if: github.event.inputs.action == 'destroy'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        tofu plan -destroy -no-color -out=tfplan 2>&1 | tee plan_output.txt
+        
+        # ERROR DETECTION LOGIC
+        # Check if "Error:" appears in the output
+        if grep -q "Error:" plan_output.txt; then
+          echo "❌ ERROR DETECTED in OpenTofu output!"
+          cat plan_output.txt
+          exit 1
+        fi
+        
+        # Destroy logic: It usually says "0 to add, 0 to change, 0 to destroy" if empty
+        if grep -q "0 to add, 0 to change, 0 to destroy" plan_output.txt; then
+          echo "✅ Detected zero changes."
+          echo "any_changes=false" >> $GITHUB_OUTPUT
+        elif grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
+          # Catch-all for some Tofu versions
+          echo "✅ Detected 'No changes' phrase."
+          echo "any_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️ Changes detected."
+          echo "any_changes=true" >> $GITHUB_OUTPUT
+        fi
+
+    # 🧠 ANALYZE RESULTS
+    - name: Analyze Plan Results
+      id: analyze
+      run: |
+        echo "--- 🔍 DEBUG INFO ---"
+        
+        CHANGES_CREATE="${{ steps.plan-create.outputs.any_changes }}"
+        CHANGES_DESTROY="${{ steps.plan-destroy.outputs.any_changes }}"
+        
+        # Consolidate
+        ANY_CHANGES="false"
+        if [ "$CHANGES_CREATE" == "true" ] || [ "$CHANGES_DESTROY" == "true" ]; then
+          ANY_CHANGES="true"
+        fi
+        echo "📊 Final ANY_CHANGES: $ANY_CHANGES"
+
+        # Determine Mode
+        MODE="plan" 
+        if [ "${{ github.event_name }}" == "push" ]; then
+          MODE="apply"
+        elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          MODE="${{ github.event.inputs.action }}"
+        fi
+        echo "ℹ️ Workflow Mode: $MODE"
+
+        # Final Decision
+        SHOULD_APPLY="false"
+        if [ "$ANY_CHANGES" == "true" ]; then
+          if [ "$MODE" == "apply" ] || [ "$MODE" == "destroy" ]; then
+            SHOULD_APPLY="true"
+            echo "✅ DECISION: APPLY"
+          else
+            echo "⏸️ DECISION: SKIP (Plan Mode)"
+          fi
+        else
+          echo "zz DECISION: SKIP (No Changes)"
+        fi
+
+        echo "should_apply=$SHOULD_APPLY" >> $GITHUB_OUTPUT
+
+    - name: Publish Plan Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ env.WORKING_DIR }}/tfplan
+
+    - name: Comment PR with Plan
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '### OpenTofu Plan Successful 豆腐 ✅\n\nThe plan has been generated. Merge this PR to allow deployment to production.'
+          })
+
+  # JOB 2: APPLY
+  apply:
+    name: OpenTofu Apply
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: prod
+    if: needs.plan.outputs.should_apply == 'true'
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_version: ${{ env.TOFU_VERSION }}
+
+    - name: Download Plan Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ env.WORKING_DIR }}
+
+    - name: Azure Login via OIDC
+      uses: azure/login@v1
+      with:
+        client-id: 043b35c3-f5de-4578-acd2-8b8f4c78f461
+        tenant-id: 2236b5e4-81d2-4d82-bde5-17b1037999ea
+        subscription-id: aee0cbd2-8074-4001-b610-0f8edb4eaa3c
+
+    - name: OpenTofu Init
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: tofu init
+
+    - name: OpenTofu Apply
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: tofu apply -auto-approve tfplan
+
+    - name: Get OpenTofu Outputs
+      id: outputs
+      run: |
+        echo "client_id=$(tofu output -raw azure_client_id || echo 'N/A')" >> $GITHUB_OUTPUT
+        echo "tenant_id=$(tofu output -raw azure_tenant_id || echo 'N/A')" >> $GITHUB_OUTPUT
+        echo "subscription_id=$(tofu output -raw azure_subscription_id || echo 'N/A')" >> $GITHUB_OUTPUT
+        echo "resource_group_name=$(tofu output -raw resource_group_name || echo 'N/A')" >> $GITHUB_OUTPUT
+        echo "static_web_app_name=$(tofu output -raw static_web_app_name || echo 'N/A')" >> $GITHUB_OUTPUT
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎉 Infrastructure Applied to Production (via OpenTofu)!" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "AZURE_CLIENT_ID       = ${{ steps.outputs.outputs.client_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "AZURE_TENANT_ID       = ${{ steps.outputs.outputs.tenant_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "AZURE_SUBSCRIPTION_ID = ${{ steps.outputs.outputs.subscription_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "STATIC_WEB_APP_NAME   = ${{ steps.outputs.outputs.static_web_app_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

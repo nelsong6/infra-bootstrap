@@ -4,8 +4,12 @@
 
 Write-Host "[8/9] Setting up Azure Storage for OpenTofu state..." -ForegroundColor Yellow
 
-# Check if tfstate resource group exists
+# Check if tfstate resource group exists (temporarily disable error handling for the check)
+$PreviousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 $EXISTING_TFSTATE_RG = az group show --name $script:TFSTATE_RG_NAME --query id -o tsv 2>$null
+$ErrorActionPreference = $PreviousErrorActionPreference
+
 if ($EXISTING_TFSTATE_RG) {
     Write-Host "  Resource group '$script:TFSTATE_RG_NAME' already exists" -ForegroundColor Gray
     # Get existing storage account if it exists
@@ -19,8 +23,11 @@ if ($EXISTING_TFSTATE_RG) {
     az group create --name $script:TFSTATE_RG_NAME --location westus2 --output none
 }
 
-# Check if storage account exists
+# Check if storage account exists (temporarily disable error handling for the check)
+$ErrorActionPreference = "Continue"
 $STORAGE_EXISTS = az storage account show --name $script:STORAGE_NAME --resource-group $script:TFSTATE_RG_NAME --query id -o tsv 2>$null
+$ErrorActionPreference = $PreviousErrorActionPreference
+
 if (-not $STORAGE_EXISTS) {
     Write-Host "  Creating storage account: $script:STORAGE_NAME..." -ForegroundColor Gray
     az storage account create `
@@ -47,4 +54,4 @@ if ($CONTAINER_EXISTS -eq "true") {
         --output none
 }
 
-Write-Host "✓ Storage backend configured`n" -ForegroundColor Green
+Write-Host "[OK] Storage backend configured`n" -ForegroundColor Green

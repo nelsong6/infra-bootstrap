@@ -23,4 +23,4 @@ if (-not (Test-Path "tofu")) {
 
 # Write the file
 $backendContent | Out-File -FilePath $script:TARGET_FILE -Encoding utf8
-Write-Host "✓ Backend configuration saved to: $script:TARGET_FILE`n" -ForegroundColor Green
+Write-Host "[OK] Backend configuration saved to: $script:TARGET_FILE`n" -ForegroundColor Green
