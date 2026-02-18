@@ -144,7 +144,7 @@ jobs:
         
         if [ "${{ github.event_name }}" == "push" ]; then
           echo "**Trigger:** Push to \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Action:** Plan (validation only)" >> $GITHUB_STEP_SUMMARY
+          echo "**Action:** Apply (automatic)" >> $GITHUB_STEP_SUMMARY
         else
           echo "**Trigger:** Manual (workflow_dispatch)" >> $GITHUB_STEP_SUMMARY
           echo "**Action:** ${{ github.event.inputs.action }}" >> $GITHUB_STEP_SUMMARY
@@ -153,12 +153,9 @@ jobs:
         echo "**Has Changes:** ${{ steps.analyze.outputs.has_changes }}" >> $GITHUB_STEP_SUMMARY
         
         if [ "${{ steps.analyze.outputs.has_changes }}" == "true" ]; then
-          if [ "${{ github.event.inputs.action }}" == "apply" ] || [ "${{ github.event.inputs.action }}" == "destroy" ]; then
+          if [ "${{ github.event.inputs.action }}" == "apply" ] || [ "${{ github.event.inputs.action }}" == "destroy" ] || [ "${{ github.event_name }}" == "push" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "⚠️ **Apply job will run next and require approval**" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ github.event_name }}" == "push" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "ℹ️ **To apply these changes, use the 'Tofu Production Deploy' workflow with 'apply' action**" >> $GITHUB_STEP_SUMMARY
           fi
         else
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -172,7 +169,7 @@ jobs:
     environment: prod
     if: |
       needs.plan.outputs.has_changes == 'true' && 
-      (github.event.inputs.action == 'apply' || github.event.inputs.action == 'destroy')
+      (github.event.inputs.action == 'apply' || github.event.inputs.action == 'destroy' || github.event_name == 'push')
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
