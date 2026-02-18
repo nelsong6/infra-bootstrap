@@ -1,0 +1,112 @@
+name: Tofu PR Plan
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'tofu/**'
+      - '.github/workflows/tofu-pr-plan.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  TOFU_VERSION: 'latest'
+  WORKING_DIR: './tofu'
+
+jobs:
+  plan:
+    name: OpenTofu Plan (PR Validation)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_version: ${{ env.TOFU_VERSION }}
+
+    - name: Azure Login via OIDC
+      uses: azure/login@v1
+      with:
+        client-id: 043b35c3-f5de-4578-acd2-8b8f4c78f461
+        tenant-id: 2236b5e4-81d2-4d82-bde5-17b1037999ea
+        subscription-id: aee0cbd2-8074-4001-b610-0f8edb4eaa3c
+
+    - name: OpenTofu Init
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: tofu init
+
+    - name: OpenTofu Validate
+      run: tofu validate -no-color
+
+    - name: OpenTofu Plan
+      id: plan
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Run plan and capture output
+        tofu plan -no-color 2>&1 | tee plan_output.txt
+        
+        # Check for errors
+        if grep -q "Error:" plan_output.txt; then
+          echo "❌ ERROR DETECTED in OpenTofu output!"
+          cat plan_output.txt
+          exit 1
+        fi
+        
+        # Check for changes
+        if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
+          echo "✅ No changes detected"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️ Changes detected"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        fi
+        
+        # Store plan output for PR comment
+        echo "PLAN_OUTPUT<<EOF" >> $GITHUB_ENV
+        cat plan_output.txt >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Comment PR with Plan Results
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const planOutput = process.env.PLAN_OUTPUT;
+          const hasChanges = '${{ steps.plan.outputs.has_changes }}' === 'true';
+          
+          let body = '### OpenTofu Plan Results 豆腐\n\n';
+          
+          if (hasChanges) {
+            body += '✅ **Plan successful** - Infrastructure changes detected\n\n';
+            body += '**Next Steps:**\n';
+            body += '1. Review the plan output below\n';
+            body += '2. Merge this PR to enable production deployment\n';
+            body += '3. Use the **Tofu Production Deploy** workflow to apply changes\n\n';
+          } else {
+            body += '✅ **Plan successful** - No infrastructure changes detected\n\n';
+          }
+          
+          body += '<details>\n<summary>Show Plan Output</summary>\n\n```\n';
+          body += planOutput.slice(0, 60000); // Truncate if too long
+          body += '\n```\n</details>';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });

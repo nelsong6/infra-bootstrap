@@ -1,0 +1,44 @@
+# Gitleaks configuration file
+# This configuration helps detect secrets in your codebase
+
+title = "Gitleaks Configuration"
+
+[extend]
+# Use the default Gitleaks configuration as a base
+useDefault = true
+
+[allowlist]
+description = "Allowlisted files and patterns"
+
+# Allowlist specific paths that might have false positives
+paths = [
+  '''\.terraform\.lock\.hcl$''',  # Terraform lock files
+  '''\.gitignore$''',              # Gitignore files
+  '''README\.md$''',               # Documentation
+]
+
+# Allowlist specific patterns that are known false positives
+regexes = [
+  '''dummy[_-]?secret''',          # Placeholder secrets
+  '''example[_-]?key''',           # Example keys in documentation
+  '''xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx''',  # Placeholder UUIDs
+]
+
+# Allowlist specific commits (add commit SHAs here if needed)
+commits = []
+
+# Additional custom rules can be added here
+[[rules]]
+id = "azure-subscription-id"
+description = "Detected Azure Subscription ID"
+regex = '''[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'''
+tags = ["azure", "subscription"]
+
+[[rules]]
+id = "azure-client-secret"
+description = "Detected potential Azure Client Secret"
+regex = '''[a-zA-Z0-9~_\-\.]{34,40}'''
+tags = ["azure", "secret"]
+[rules.allowlist]
+# Add patterns to allowlist for this specific rule
+regexes = ['''example''', '''dummy''', '''placeholder''']
