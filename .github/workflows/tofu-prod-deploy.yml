@@ -1,35 +1,47 @@
-name: Tofu Production Deploy
+name: Shared OpenTofu Deployment
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       action:
-        description: 'Action to perform'
-        required: true
-        default: 'plan'
-        type: choice
-        options:
-          - plan
-          - apply
-          - destroy
-  push:
-    branches: ['**']
-    paths:
-      - 'tofu/**'
-      - '.github/workflows/tofu-prod-deploy.yml'
-
-concurrency:
-  group: tofu-production
-  cancel-in-progress: false
+        description: 'OpenTofu action to perform (plan, apply, destroy)'
+        required: false
+        type: string
+        default: 'apply'
+      environment:
+        description: 'Target environment'
+        required: false
+        type: string
+        default: 'prod'
+      working_directory:
+        description: 'Directory containing OpenTofu files'
+        required: false
+        type: string
+        default: './tofu'
+      azure_client_id:
+        description: 'Azure Client ID (OIDC)'
+        required: false
+        type: string
+        default: '043b35c3-f5de-4578-acd2-8b8f4c78f461'
+      azure_tenant_id:
+        description: 'Azure Tenant ID'
+        required: false
+        type: string
+        default: '2236b5e4-81d2-4d82-bde5-17b1037999ea'
+      azure_subscription_id:
+        description: 'Azure Subscription ID'
+        required: false
+        type: string
+        default: 'aee0cbd2-8074-4001-b610-0f8edb4eaa3c'
 
 permissions:
   id-token: write
   contents: read
+  pull-requests: write
   actions: write
 
 env:
   TOFU_VERSION: 'latest'
-  WORKING_DIR: './tofu'
 
 jobs:
   plan:
@@ -37,11 +49,11 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ${{ env.WORKING_DIR }}
-
+        working-directory: ${{ inputs.working_directory }}
+    
     outputs:
-      has_changes: ${{ steps.analyze.outputs.has_changes }}
-
+      should_apply: ${{ steps.analyze.outputs.should_apply }}
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -52,11 +64,18 @@ jobs:
         tofu_version: ${{ env.TOFU_VERSION }}
 
     - name: Azure Login via OIDC
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
-        client-id: 043b35c3-f5de-4578-acd2-8b8f4c78f461
-        tenant-id: 2236b5e4-81d2-4d82-bde5-17b1037999ea
-        subscription-id: aee0cbd2-8074-4001-b610-0f8edb4eaa3c
+        client-id: ${{ inputs.azure_client_id }}
+        tenant-id: ${{ inputs.azure_tenant_id }}
+        subscription-id: ${{ inputs.azure_subscription_id }}
+
+    - name: Create terraform.tfvars context
+      run: |
+        cat > terraform.tfvars << EOF
+        github_repo   = "${{ github.repository }}"
+        github_branch = "${{ github.ref_name }}"
+        EOF
 
     - name: OpenTofu Init
       env:
@@ -66,113 +85,121 @@ jobs:
     - name: OpenTofu Validate
       run: tofu validate -no-color
 
-    - name: OpenTofu Plan (Create/Update)
+    # 🟢 PLAN (Create/Update)
+    - name: OpenTofu Plan (Create)
       id: plan-create
-      if: github.event.inputs.action != 'destroy' || github.event_name == 'push'
+      if: inputs.action != 'destroy'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         tofu plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
         
-        # Check for errors
         if grep -q "Error:" plan_output.txt; then
           echo "❌ ERROR DETECTED in OpenTofu output!"
-          cat plan_output.txt
           exit 1
         fi
         
-        # Check for changes
         if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
-          echo "✅ No changes detected"
           echo "any_changes=false" >> $GITHUB_OUTPUT
         else
-          echo "⚠️ Changes detected"
           echo "any_changes=true" >> $GITHUB_OUTPUT
         fi
 
+    # 🔴 PLAN (Destroy)
     - name: OpenTofu Plan (Destroy)
       id: plan-destroy
-      if: github.event.inputs.action == 'destroy'
+      if: inputs.action == 'destroy'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         tofu plan -destroy -no-color -out=tfplan 2>&1 | tee plan_output.txt
         
-        # Check for errors
         if grep -q "Error:" plan_output.txt; then
           echo "❌ ERROR DETECTED in OpenTofu output!"
-          cat plan_output.txt
           exit 1
         fi
         
-        # Check for changes
-        if grep -q "0 to add, 0 to change, 0 to destroy" plan_output.txt; then
-          echo "✅ No changes detected"
-          echo "any_changes=false" >> $GITHUB_OUTPUT
-        elif grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
-          echo "✅ No changes detected"
+        if grep -q "0 to add, 0 to change, 0 to destroy" plan_output.txt || grep -q "No changes." plan_output.txt; then
           echo "any_changes=false" >> $GITHUB_OUTPUT
         else
-          echo "⚠️ Changes detected"
           echo "any_changes=true" >> $GITHUB_OUTPUT
         fi
 
+    # 🧠 ANALYZE RESULTS
     - name: Analyze Plan Results
       id: analyze
       run: |
         CHANGES_CREATE="${{ steps.plan-create.outputs.any_changes }}"
         CHANGES_DESTROY="${{ steps.plan-destroy.outputs.any_changes }}"
         
-        HAS_CHANGES="false"
+        ANY_CHANGES="false"
         if [ "$CHANGES_CREATE" == "true" ] || [ "$CHANGES_DESTROY" == "true" ]; then
-          HAS_CHANGES="true"
+          ANY_CHANGES="true"
         fi
-        
-        echo "has_changes=$HAS_CHANGES" >> $GITHUB_OUTPUT
-        echo "📊 Has Changes: $HAS_CHANGES"
+
+        MODE="plan" 
+        if [ "${{ github.event_name }}" == "push" ]; then
+          MODE="apply"
+        elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          MODE="${{ inputs.action }}"
+        fi
+
+        SHOULD_APPLY="false"
+        if [ "$ANY_CHANGES" == "true" ]; then
+          if [ "$MODE" == "apply" ] || [ "$MODE" == "destroy" ]; then
+            SHOULD_APPLY="true"
+          fi
+        fi
+
+        echo "should_apply=$SHOULD_APPLY" >> $GITHUB_OUTPUT
 
     - name: Publish Plan Artifact
-      if: steps.analyze.outputs.has_changes == 'true'
+      if: steps.analyze.outputs.should_apply == 'true' || github.event_name == 'pull_request'
       uses: actions/upload-artifact@v4
       with:
         name: tfplan
-        path: ${{ env.WORKING_DIR }}/tfplan
+        path: ${{ inputs.working_directory }}/tfplan
 
-    - name: Plan Summary
-      run: |
-        echo "## Plan Results" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ github.event_name }}" == "push" ]; then
-          echo "**Trigger:** Push to \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Action:** Apply (automatic)" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "**Trigger:** Manual (workflow_dispatch)" >> $GITHUB_STEP_SUMMARY
-          echo "**Action:** ${{ github.event.inputs.action }}" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        echo "**Has Changes:** ${{ steps.analyze.outputs.has_changes }}" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ steps.analyze.outputs.has_changes }}" == "true" ]; then
-          if [ "${{ github.event.inputs.action }}" == "apply" ] || [ "${{ github.event.inputs.action }}" == "destroy" ] || [ "${{ github.event_name }}" == "push" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "⚠️ **Apply job will run next and require approval**" >> $GITHUB_STEP_SUMMARY
-          fi
-        else
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ No changes to apply" >> $GITHUB_STEP_SUMMARY
-        fi
+    - name: Comment PR with Plan
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          let planOutput = '';
+          try {
+            planOutput = fs.readFileSync('${{ inputs.working_directory }}/plan_output.txt', 'utf8');
+          } catch (e) {
+            planOutput = '_(plan output not available)_';
+          }
+          const body = [
+            '### OpenTofu Plan 豆腐',
+            '<details><summary>View plan output</summary>',
+            '',
+            '```hcl',
+            planOutput.slice(0, 60000),
+            '```',
+            '</details>',
+            '',
+            'Merge this PR to apply to production.',
+          ].join('\n');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body,
+          });
 
+  # JOB 2: APPLY
   apply:
-    name: OpenTofu Apply to Production
+    name: OpenTofu Apply
     needs: plan
     runs-on: ubuntu-latest
-    environment: prod
-    if: |
-      needs.plan.outputs.has_changes == 'true' && 
-      (github.event.inputs.action == 'apply' || github.event.inputs.action == 'destroy' || github.event_name == 'push')
+    environment: ${{ inputs.environment }}
+    if: needs.plan.outputs.should_apply == 'true' && github.event_name != 'pull_request'
     defaults:
       run:
-        working-directory: ${{ env.WORKING_DIR }}
+        working-directory: ${{ inputs.working_directory }}
 
     steps:
     - name: Checkout code
@@ -187,14 +214,14 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: tfplan
-        path: ${{ env.WORKING_DIR }}
+        path: ${{ inputs.working_directory }}
 
     - name: Azure Login via OIDC
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
-        client-id: 043b35c3-f5de-4578-acd2-8b8f4c78f461
-        tenant-id: 2236b5e4-81d2-4d82-bde5-17b1037999ea
-        subscription-id: aee0cbd2-8074-4001-b610-0f8edb4eaa3c
+        client-id: ${{ inputs.azure_client_id }}
+        tenant-id: ${{ inputs.azure_tenant_id }}
+        subscription-id: ${{ inputs.azure_subscription_id }}
 
     - name: OpenTofu Init
       env:
@@ -204,33 +231,12 @@ jobs:
     - name: OpenTofu Apply
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        echo "🚀 Applying changes to production..."
-        tofu apply -auto-approve tfplan
-
-    - name: Get OpenTofu Outputs
-      id: outputs
-      if: github.event.inputs.action != 'destroy' || github.event_name == 'push'
-      run: |
-        echo "client_id=$(tofu output -raw azure_client_id || echo 'N/A')" >> $GITHUB_OUTPUT
-        echo "tenant_id=$(tofu output -raw azure_tenant_id || echo 'N/A')" >> $GITHUB_OUTPUT
-        echo "subscription_id=$(tofu output -raw azure_subscription_id || echo 'N/A')" >> $GITHUB_OUTPUT
-        echo "resource_group_name=$(tofu output -raw resource_group_name || echo 'N/A')" >> $GITHUB_OUTPUT
-
+      run: tofu apply -auto-approve tfplan
+      
     - name: Deployment Summary
       run: |
-        echo "## 🎉 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
-        echo "**Action:** ${{ github.event.inputs.action }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
-        echo "**Triggered by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ github.event.inputs.action }}" != "destroy" ]; then
-          echo "### Infrastructure Outputs" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "AZURE_CLIENT_ID       = ${{ steps.outputs.outputs.client_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "AZURE_TENANT_ID       = ${{ steps.outputs.outputs.tenant_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "AZURE_SUBSCRIPTION_ID = ${{ steps.outputs.outputs.subscription_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "RESOURCE_GROUP_NAME   = ${{ steps.outputs.outputs.resource_group_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        fi
+        echo "## 🎉 Infrastructure Applied to ${{ inputs.environment }}!" >> $GITHUB_STEP_SUMMARY
+        echo "### Outputs" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`hcl" >> $GITHUB_STEP_SUMMARY
+        tofu output -no-color >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
