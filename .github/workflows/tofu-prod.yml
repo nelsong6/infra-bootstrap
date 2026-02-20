@@ -1,0 +1,36 @@
+name: Tofu
+
+on:
+  workflow_dispatch:
+    # ⚠️ This is required to draw the UI dropdown in this specific repo
+    inputs:
+      action:
+        description: 'OpenTofu action to perform'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+  push:
+    branches: ['main']
+    paths:
+      - 'tofu/**'
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'tofu/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-infra:
+    uses: nelsong6/shared-workflows/.github/workflows/tofu-deploy-template.yml@init
+    with:
+      action: ${{ github.event.inputs.action || 'apply' }}
+      environment: 'prod'
+      working_directory: './tofu'
+    secrets: inherit
