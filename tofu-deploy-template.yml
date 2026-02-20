@@ -1,0 +1,242 @@
+name: Shared OpenTofu Deployment
+
+on:
+  workflow_call:
+    inputs:
+      action:
+        description: 'OpenTofu action to perform (plan, apply, destroy)'
+        required: false
+        type: string
+        default: 'apply'
+      environment:
+        description: 'Target environment'
+        required: false
+        type: string
+        default: 'prod'
+      working_directory:
+        description: 'Directory containing OpenTofu files'
+        required: false
+        type: string
+        default: './tofu'
+      azure_client_id:
+        description: 'Azure Client ID (OIDC)'
+        required: false
+        type: string
+        default: '043b35c3-f5de-4578-acd2-8b8f4c78f461'
+      azure_tenant_id:
+        description: 'Azure Tenant ID'
+        required: false
+        type: string
+        default: '2236b5e4-81d2-4d82-bde5-17b1037999ea'
+      azure_subscription_id:
+        description: 'Azure Subscription ID'
+        required: false
+        type: string
+        default: 'aee0cbd2-8074-4001-b610-0f8edb4eaa3c'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  actions: write
+
+env:
+  TOFU_VERSION: 'latest'
+
+jobs:
+  plan:
+    name: OpenTofu Plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    
+    outputs:
+      should_apply: ${{ steps.analyze.outputs.should_apply }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_version: ${{ env.TOFU_VERSION }}
+
+    - name: Azure Login via OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure_client_id }}
+        tenant-id: ${{ inputs.azure_tenant_id }}
+        subscription-id: ${{ inputs.azure_subscription_id }}
+
+    - name: Create terraform.tfvars context
+      run: |
+        cat > terraform.tfvars << EOF
+        github_repo   = "${{ github.repository }}"
+        github_branch = "${{ github.ref_name }}"
+        EOF
+
+    - name: OpenTofu Init
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: tofu init
+
+    - name: OpenTofu Validate
+      run: tofu validate -no-color
+
+    # 🟢 PLAN (Create/Update)
+    - name: OpenTofu Plan (Create)
+      id: plan-create
+      if: inputs.action != 'destroy'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        tofu plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
+        
+        if grep -q "Error:" plan_output.txt; then
+          echo "❌ ERROR DETECTED in OpenTofu output!"
+          exit 1
+        fi
+        
+        if grep -q "No changes. Your infrastructure matches the configuration." plan_output.txt; then
+          echo "any_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "any_changes=true" >> $GITHUB_OUTPUT
+        fi
+
+    # 🔴 PLAN (Destroy)
+    - name: OpenTofu Plan (Destroy)
+      id: plan-destroy
+      if: inputs.action == 'destroy'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        tofu plan -destroy -no-color -out=tfplan 2>&1 | tee plan_output.txt
+        
+        if grep -q "Error:" plan_output.txt; then
+          echo "❌ ERROR DETECTED in OpenTofu output!"
+          exit 1
+        fi
+        
+        if grep -q "0 to add, 0 to change, 0 to destroy" plan_output.txt || grep -q "No changes." plan_output.txt; then
+          echo "any_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "any_changes=true" >> $GITHUB_OUTPUT
+        fi
+
+    # 🧠 ANALYZE RESULTS
+    - name: Analyze Plan Results
+      id: analyze
+      run: |
+        CHANGES_CREATE="${{ steps.plan-create.outputs.any_changes }}"
+        CHANGES_DESTROY="${{ steps.plan-destroy.outputs.any_changes }}"
+        
+        ANY_CHANGES="false"
+        if [ "$CHANGES_CREATE" == "true" ] || [ "$CHANGES_DESTROY" == "true" ]; then
+          ANY_CHANGES="true"
+        fi
+
+        MODE="plan" 
+        if [ "${{ github.event_name }}" == "push" ]; then
+          MODE="apply"
+        elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          MODE="${{ inputs.action }}"
+        fi
+
+        SHOULD_APPLY="false"
+        if [ "$ANY_CHANGES" == "true" ]; then
+          if [ "$MODE" == "apply" ] || [ "$MODE" == "destroy" ]; then
+            SHOULD_APPLY="true"
+          fi
+        fi
+
+        echo "should_apply=$SHOULD_APPLY" >> $GITHUB_OUTPUT
+
+    - name: Publish Plan Artifact
+      if: steps.analyze.outputs.should_apply == 'true' || github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ inputs.working_directory }}/tfplan
+
+    - name: Comment PR with Plan
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          let planOutput = '';
+          try {
+            planOutput = fs.readFileSync('${{ inputs.working_directory }}/plan_output.txt', 'utf8');
+          } catch (e) {
+            planOutput = '_(plan output not available)_';
+          }
+          const body = [
+            '### OpenTofu Plan 豆腐',
+            '<details><summary>View plan output</summary>',
+            '',
+            '```hcl',
+            planOutput.slice(0, 60000),
+            '```',
+            '</details>',
+            '',
+            'Merge this PR to apply to production.',
+          ].join('\n');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body,
+          });
+
+  # JOB 2: APPLY
+  apply:
+    name: OpenTofu Apply
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    if: needs.plan.outputs.should_apply == 'true' && github.event_name != 'pull_request'
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_version: ${{ env.TOFU_VERSION }}
+
+    - name: Download Plan Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ inputs.working_directory }}
+
+    - name: Azure Login via OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure_client_id }}
+        tenant-id: ${{ inputs.azure_tenant_id }}
+        subscription-id: ${{ inputs.azure_subscription_id }}
+
+    - name: OpenTofu Init
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: tofu init
+
+    - name: OpenTofu Apply
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: tofu apply -auto-approve tfplan
+      
+    - name: Deployment Summary
+      run: |
+        echo "## 🎉 Infrastructure Applied to ${{ inputs.environment }}!" >> $GITHUB_STEP_SUMMARY
+        echo "### Outputs" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`hcl" >> $GITHUB_STEP_SUMMARY
+        tofu output -no-color >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

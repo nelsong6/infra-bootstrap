@@ -40,7 +40,7 @@ resource "azurerm_dns_mx_record" "email" {
   }
 
   record {
-    preference = 10
+    preference = 20
     exchange   = "mx2.privateemail.com"
   }
 
@@ -60,6 +60,42 @@ resource "azurerm_dns_txt_record" "spf" {
 
   record {
     value = "v=spf1 include:spf.privateemail.com ~all"
+  }
+
+  tags = {
+    Environment = "Production"
+    ManagedBy   = "Terraform"
+    Purpose     = "Email"
+  }
+}
+
+# DMARC Record - Email authentication policy
+resource "azurerm_dns_txt_record" "dmarc" {
+  name                = "_dmarc"
+  zone_name           = azurerm_dns_zone.main.name
+  resource_group_name = data.azurerm_resource_group.main.name
+  ttl                 = 3600
+
+  record {
+    value = "v=DMARC1; p=none;"
+  }
+
+  tags = {
+    Environment = "Production"
+    ManagedBy   = "Terraform"
+    Purpose     = "Email"
+  }
+}
+
+# DKIM Record - Email authentication signature
+resource "azurerm_dns_txt_record" "dkim" {
+  name                = "default._domainkey" # Standard Namecheap selector
+  zone_name           = azurerm_dns_zone.main.name
+  resource_group_name = data.azurerm_resource_group.main.name
+  ttl                 = 3600
+
+  record {
+    value = "v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1E5ptWwKni8v4Ywx2dpXDpexypFEkNssDi9jcWfhtWYF/bhwMgKXjbhTzhcvshOoWnx5E6lV4Gyh+I0Q8dhu4wl8VgosUtWjJWUj3Zdi7jfNVh7mGuthId6jNUOqMzYi64NCMcuOuyjcIij90klgNmVQXMBHKENUVPoSXb1TZ8qRyWwz+D9l5/Yp0q0y2OnASshSj1Ik/wzE5mrGZBteWjMZLca920cZgkgorgVwZIuXjin9pzqIG4QNjgEouhWoCOgECW2CIPoqnuJ+n6LgiDFJnpPQEIOdeFbDfr4+0xrIMO3R9Uxlpu+jcYFSIbCbbqCuWt8vlA/q5qhkJ+MinQIDAQAB"
   }
 
   tags = {
