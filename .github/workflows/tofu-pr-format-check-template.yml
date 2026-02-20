@@ -1,0 +1,18 @@
+name: PR Format Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '.github/workflows/pr-format-check.yml'
+
+jobs:
+  format-check:
+    uses: nelsong6/pipeline-templates/.github/workflows/tofu-pr-format-check-template.yml@main
+    with:
+      working_directory: '.'
+    secrets: inherit

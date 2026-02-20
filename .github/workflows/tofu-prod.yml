@@ -2,7 +2,6 @@ name: Tofu
 
 on:
   workflow_dispatch:
-    # ⚠️ This is required to draw the UI dropdown in this specific repo
     inputs:
       action:
         description: 'OpenTofu action to perform'
@@ -28,9 +27,7 @@ concurrency:
 
 jobs:
   deploy-infra:
-    uses: nelsong6/infra-bootstrap/tofu-deploy-template.yml@main
+    uses: nelsong6/pipeline-templates/.github/workflows/tofu-prod-template.yml@main
     with:
       action: ${{ github.event.inputs.action || 'apply' }}
-      environment: 'prod'
-      working_directory: './tofu'
     secrets: inherit
