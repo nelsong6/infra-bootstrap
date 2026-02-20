@@ -25,6 +25,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  actions: write
+
 jobs:
   deploy-infra:
     uses: nelsong6/pipeline-templates/.github/workflows/tofu-prod-template.yml@main
