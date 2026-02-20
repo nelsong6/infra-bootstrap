@@ -13,11 +13,11 @@ on:
           - apply
           - destroy
   push:
-    branches: ['main']
+    branches: ['*']
     paths:
       - 'tofu/**'
   pull_request:
-    branches: ['main']
+    branches: ['*']
     paths:
       - 'tofu/**'
 
