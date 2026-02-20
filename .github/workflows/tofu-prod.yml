@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   deploy-infra:
-    uses: nelsong6/shared-workflows/.github/workflows/tofu-deploy-template.yml@init
+    uses: nelsong6/infra-bootstrap/tofu-deploy-template.yml@main
     with:
       action: ${{ github.event.inputs.action || 'apply' }}
       environment: 'prod'
