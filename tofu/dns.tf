@@ -126,7 +126,7 @@ resource "azurerm_dns_cname_record" "auth0" {
   zone_name           = azurerm_dns_zone.main.name
   resource_group_name = data.azurerm_resource_group.main.name
   ttl                 = 3600
-  record              = "dev-gtdi5x5p0nmticqd-cd-y31twdwrz2bwi6zv.edge.tenants.us.auth0.com"
+  record              = auth0_custom_domain.main.verification[0].methods[0].record
 
   tags = {
     Environment = "Production"

@@ -1,0 +1,19 @@
+name: Update Tofu Lockfile
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * 1' # Runs automatically every Monday
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfile:
+    uses: ./.github/workflows/update-lockfile-template.yml
+    with:
+      working_directory: '.'    # Change this if your code lives in a subdirectory
+      environment_name: 'prod'  # Must match the Environment name in your GitHub Repo settings
