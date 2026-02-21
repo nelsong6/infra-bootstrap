@@ -13,6 +13,10 @@ terraform {
       source  = "auth0/auth0"
       version = "~> 1.40.0" 
     }
+    infisical = {
+      source  = "infisical/infisical"
+      version = "~> 0.16.0"
+    }
   }
   backend "azurerm" {
     resource_group_name  = "infra"
