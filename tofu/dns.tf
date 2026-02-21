@@ -120,6 +120,21 @@ resource "azurerm_dns_cname_record" "autoconfig" {
   }
 }
 
+# Auth0 Custom Domain
+resource "azurerm_dns_cname_record" "auth0" {
+  name                = "auth"
+  zone_name           = azurerm_dns_zone.main.name
+  resource_group_name = data.azurerm_resource_group.main.name
+  ttl                 = 3600
+  record              = "dev-gtdi5x5p0nmticqd-cd-y31twdwrz2bwi6zv.edge.tenants.us.auth0.com"
+
+  tags = {
+    Environment = "Production"
+    ManagedBy   = "Terraform"
+    Purpose     = "Auth0"
+  }
+}
+
 # Autodiscover - Email client configuration
 resource "azurerm_dns_cname_record" "autodiscover" {
   name                = "autodiscover"

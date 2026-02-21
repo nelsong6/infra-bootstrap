@@ -6,3 +6,4 @@
 # or user running Terraform.
 
 data "azurerm_client_config" "current" {}
+

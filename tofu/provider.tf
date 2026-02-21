@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~> 3.0"
     }
+    auth0 = {
+      source  = "auth0/auth0"
+      version = "~> 1.40.0" 
+    }
   }
 
   backend "azurerm" {
@@ -28,4 +32,10 @@ provider "azurerm" {
 
 provider "azuread" {
   use_oidc = true # Enable OIDC authentication
+}
+
+provider "auth0" {
+  domain        = ""
+  client_id     = ""
+  client_secret = var.auth0_admin_client_secret
 }
