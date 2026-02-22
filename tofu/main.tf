@@ -84,5 +84,5 @@ module "app" {
 
 import {
   to = module.app["kill-me"].github_repository.repo
-  id = "kill-me"
+  id = "nelsong6/kill-me"
 }
