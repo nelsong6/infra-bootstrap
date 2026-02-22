@@ -37,9 +37,9 @@ resource "spacelift_stack" "stack" {
 }
 
 # 1. Establish the dependency link between the stacks
-resource "spacelift_stack_dependency" "infra_to_kill_me" {
+resource "spacelift_stack_dependency" "dependency" {
   # Assuming your spacelift_stack resource is named 'kill_me' or 'repo'
-  stack_id            = spacelift_stack.kill_me.id 
+  stack_id            = spacelift_stack.stack.id 
   depends_on_stack_id = data.spacelift_current_stack.this.id
 }
 
@@ -63,10 +63,10 @@ locals {
 }
 
 # 3. Loop through the list to create the references dynamically
-resource "spacelift_stack_dependency_reference" "kill_me_refs" {
+resource "spacelift_stack_dependency_reference" "reference" {
   for_each = toset(local.kill_me_inputs)
 
-  stack_dependency_id = spacelift_stack_dependency.infra_to_kill_me.id
+  stack_dependency_id = spacelift_stack_dependency.dependency.id
   output_name         = each.value
   input_name          = "TF_VAR_${each.value}"
 }
