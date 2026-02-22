@@ -42,11 +42,13 @@ jobs:
       - name: Check for Changes & Post Summary
         id: diff
         run: |
-          if ! git diff-index --quiet HEAD .terraform.lock.hcl; then
+          # If the file is new/untracked or modified, git status will return a string.
+          # -n checks if that string is NOT empty.
+          if [[ -n "$(git status --porcelain .terraform.lock.hcl)" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             
             echo "### ⚠️ Lockfile Updates Found" >> $GITHUB_STEP_SUMMARY
-            echo "A new provider version is available. The updated lockfile has been generated and is waiting for approval in the \`prod\` environment before being committed." >> $GITHUB_STEP_SUMMARY
+            echo "A new provider version is available (or the file was initially created). The updated lockfile has been generated and is waiting for approval in the \`prod\` environment before being committed." >> $GITHUB_STEP_SUMMARY
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "### ✅ Lockfile is up to date" >> $GITHUB_STEP_SUMMARY
