@@ -34,6 +34,11 @@ resource "spacelift_stack" "stack" {
   terraform_workflow_tool = "OPEN_TOFU"
   project_root            = "tofu"
   labels                  = ["azure"]
+
+  before_plan = [
+    "export TF_VAR_commit_sha=$SPACELIFT_COMMIT_SHA"
+  ]
+
   after_apply = [
     <<-EOF
     echo "Waking up GitHub Actions CD pipeline..."
