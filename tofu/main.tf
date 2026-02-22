@@ -69,3 +69,16 @@ resource "azurerm_cosmosdb_account" "main" {
   }
 
 }
+
+locals {
+  apps = toset(["kill-me"])
+}
+
+module "app" {
+  source   = "../modules/app"
+  for_each = local.apps
+
+  name               = each.value
+  github_owner       = var.repo_owner
+  spacelift_space_id = "root"
+}

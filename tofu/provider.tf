@@ -17,6 +17,10 @@ terraform {
       source  = "spacelift-io/spacelift"
       version = "~> 1.0"
     }
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.0"
+    }
   }
 }
 
@@ -32,6 +36,19 @@ provider "azuread" {
 variable "auth0_client_secret" {
   type      = string
   sensitive = true
+}
+
+variable "github_token" {
+  type      = string
+  sensitive = true
+}
+
+variable "github_owner" {
+  type = string
+}
+
+provider "github" {
+  token = var.spacelift_vcs_app_token
 }
 
 provider "auth0" {
