@@ -118,7 +118,7 @@ resource "spacelift_policy" "github_actions_oidc" {
   type        = "LOGIN"
   
   # Attaching it to the same space as your stacks
-  space_id    = var.spacelift_space_id 
+  space_id    = "root"
   
   body = <<-EOF
   package spacelift
