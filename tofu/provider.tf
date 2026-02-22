@@ -38,15 +38,6 @@ variable "auth0_client_secret" {
   sensitive = true
 }
 
-variable "github_token" {
-  type      = string
-  sensitive = true
-}
-
-variable "github_owner" {
-  type = string
-}
-
 provider "github" {
   token = var.spacelift_vcs_app_token
 }
