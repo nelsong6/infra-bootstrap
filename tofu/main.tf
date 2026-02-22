@@ -142,24 +142,3 @@ resource "spacelift_policy" "github_actions_oidc" {
   }
   EOF
 }
-
-resource "spacelift_policy" "smart_vcs_runs" {
-  name        = "Smart VCS Triggers"
-  description = "Ignores VCS triggers unless the stack has the 'vcs-auto-trigger' label"
-  type        = "GIT_PUSH"
-  
-  body = <<-EOF
-  package spacelift
-
-  # Check if the stack has our special bypass label
-  has_bypass_label {
-    input.stack.labels[_] == "vcs-auto-trigger"
-  }
-
-  # Ignore the push ONLY IF it does not have the bypass label
-  ignore {
-    not has_bypass_label
-  }
-  EOF
-}
-

@@ -52,9 +52,3 @@ resource "spacelift_context_attachment" "attachment" {
   stack_id   = spacelift_stack.stack.id # Your kill-me stack ID
   priority   = 0
 }
-
-# Attach it permanently. The logic handles the toggle.
-resource "spacelift_policy_attachment" "smart_vcs_attachment" {
-  policy_id = var.smart_vcs_policy_id
-  stack_id  = spacelift_stack.stack.id 
-}
