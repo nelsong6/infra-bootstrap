@@ -17,6 +17,10 @@ terraform {
       source  = "infisical/infisical"
       version = "~> 0.16.0"
     }
+    spacelift = {
+      source  = "spacelift-io/spacelift"
+      version = "~> 1.0"
+    }
   }
 }
 
