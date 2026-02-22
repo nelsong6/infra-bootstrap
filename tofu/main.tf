@@ -72,6 +72,35 @@ resource "azurerm_cosmosdb_account" "main" {
 
 locals {
   apps = toset(["kill-me"])
+
+  infra_vars = {
+    resource_group_name            = data.azurerm_resource_group.main.name
+    resource_group_location        = data.azurerm_resource_group.main.location
+    resource_group_id              = data.azurerm_resource_group.main.id
+    dns_zone_name                  = azurerm_dns_zone.main.name
+    dns_zone_id                    = azurerm_dns_zone.main.id
+    dns_zone_nameservers           = join(",", azurerm_dns_zone.main.name_servers)
+    container_app_environment_name = azurerm_container_app_environment.main.name
+    container_app_environment_id   = azurerm_container_app_environment.main.id
+    cosmos_db_account_name         = azurerm_cosmosdb_account.main.name
+    cosmos_db_account_id           = azurerm_cosmosdb_account.main.id
+    cosmos_db_endpoint             = azurerm_cosmosdb_account.main.endpoint
+    azure_subscription_id          = data.azurerm_client_config.current.subscription_id
+    azure_tenant_id                = data.azurerm_client_config.current.tenant_id
+  }
+}
+
+data "spacelift_context" "global" {
+  context_id = "global"
+}
+
+resource "spacelift_environment_variable" "infra_vars" {
+  for_each = local.infra_vars
+
+  context_id = data.spacelift_context.global.id
+  name       = "TF_VAR_${each.key}"
+  value      = each.value
+  write_only = false
 }
 
 module "app" {
