@@ -34,6 +34,9 @@ resource "spacelift_stack" "stack" {
   terraform_workflow_tool = "OPEN_TOFU"
   project_root            = "tofu"
   labels                  = ["azure"]
+  lifecycle {
+    ignore_changes = [ branch ]
+  }
 }
 
 data "spacelift_current_stack" "this" {}
