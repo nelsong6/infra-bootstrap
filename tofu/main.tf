@@ -84,6 +84,24 @@ resource "azurerm_app_configuration" "main" {
   sku                 = "free"
 }
 
+resource "azurerm_app_configuration_key" "cosmos_db_endpoint" {
+  configuration_store_id = azurerm_app_configuration.main.id
+  key                    = "cosmos_db_endpoint"
+  value                  = azurerm_cosmosdb_account.main.endpoint
+}
+
+resource "azurerm_app_configuration_key" "auth0_domain" {
+  configuration_store_id = azurerm_app_configuration.main.id
+  key                    = "AUTH0_DOMAIN"
+  value                  = auth0_custom_domain.main.domain
+}
+
+resource "azurerm_app_configuration_key" "auth0_audience" {
+  configuration_store_id = azurerm_app_configuration.main.id
+  key                    = "AUTH0_AUDIENCE"
+  value                  = "https://api.${azurerm_dns_zone.main.name}" # The identifier you used in backend.tf
+}
+
 locals {
   apps = toset(["kill-me"])
 
@@ -98,7 +116,6 @@ locals {
     container_app_environment_id   = azurerm_container_app_environment.main.id
     cosmos_db_account_name         = azurerm_cosmosdb_account.main.name
     cosmos_db_account_id           = azurerm_cosmosdb_account.main.id
-    cosmos_db_endpoint             = azurerm_cosmosdb_account.main.endpoint
     azure_app_config_endpoint      = azurerm_app_configuration.main.endpoint
     azure_app_config_resource_id   = azurerm_app_configuration.main.id
     azure_subscription_id          = data.azurerm_client_config.current.subscription_id

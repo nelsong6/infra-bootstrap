@@ -71,11 +71,6 @@ output "cosmos_db_account_id" {
   description = "Resource ID of the shared Cosmos DB account"
 }
 
-output "cosmos_db_endpoint" {
-  value       = azurerm_cosmosdb_account.main.endpoint
-  description = "Endpoint URL for the Cosmos DB account"
-}
-
 # ============================================================================
 # App Configuration Outputs
 # ============================================================================
