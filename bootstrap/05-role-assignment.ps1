@@ -2,6 +2,12 @@
 # Role Assignment - Owner Role
 # ============================================================================
 
+# Resolve SP_ID from Azure if the previous step didn't set it
+if (-not $script:SP_ID) {
+    $script:SP_ID = az ad sp list --filter "appId eq '$script:APP_ID'" --query "[0].id" -o tsv
+    if (-not $script:SP_ID) { throw "Service principal for client ID '$script:APP_ID' not found. Run step 04 first." }
+}
+
 Write-Host "[4/9] Granting Owner role to service principal..." -ForegroundColor Yellow
 $EXISTING_ROLE = az role assignment list --assignee $script:SP_ID --role Owner --scope "/subscriptions/$script:SUBSCRIPTION_ID" --query "[0].id" -o tsv
 

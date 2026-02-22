@@ -20,16 +20,6 @@ on:
           - plan
           - apply
           - destroy
-      run_frontend:
-        description: 'Deploy Frontend (Static Web App)'
-        required: true
-        type: boolean
-        default: true
-      run_backend:
-        description: 'Deploy Backend (Container App)'
-        required: true
-        type: boolean
-        default: true
 
 concurrency:
   group: "master-deployment-lock"

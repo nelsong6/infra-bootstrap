@@ -11,17 +11,19 @@ Write-Host "OpenTofu Bootstrap - Azure OIDC Setup" -ForegroundColor Cyan
 Write-Host "============================================`n" -ForegroundColor Cyan
 
 try {
-    # Execute each section in order
-    . "$PSScriptRoot\01-config.ps1"
-    . "$PSScriptRoot\02-azure-login.ps1"
-    . "$PSScriptRoot\03-app-registration.ps1"
-    . "$PSScriptRoot\04-service-principal.ps1"
-    . "$PSScriptRoot\05-role-assignment.ps1"
-    . "$PSScriptRoot\06-federated-credentials.ps1"
-    . "$PSScriptRoot\07-app-permissions.ps1"
-    . "$PSScriptRoot\08-storage-backend.ps1"
-    . "$PSScriptRoot\12-generate-backend.ps1"
-    . "$PSScriptRoot\13-summary.ps1"
+    # Pre-flight: ensure local.config exists before running any steps
+    $localConfig = Join-Path $PSScriptRoot "local.config"
+    if (-not (Test-Path $localConfig)) {
+        throw "local.config not found.`nCopy bootstrap\local.config.example to bootstrap\local.config and fill in your values."
+    }
+
+    $steps = Get-ChildItem -Path $PSScriptRoot -Filter "*.ps1" |
+             Where-Object { $_.Name -ne "00-bootstrap.ps1" } |
+             Sort-Object Name
+
+    foreach ($step in $steps) {
+        . $step.FullName
+    }
 
 } catch {
     Write-Host "`n❌ ERROR: Bootstrap failed!" -ForegroundColor Red
