@@ -27,11 +27,6 @@ resource "azurerm_container_app_environment" "main" {
   resource_group_name = data.azurerm_resource_group.main.name
   location            = data.azurerm_resource_group.main.location
 
-  tags = {
-    Environment = "Production"
-    ManagedBy   = "Terraform"
-    Purpose     = "Container Apps"
-  }
 }
 
 # ============================================================================
@@ -73,9 +68,13 @@ resource "azurerm_cosmosdb_account" "main" {
     failover_priority = 0
   }
 
-  tags = {
-    Environment = "Production"
-    ManagedBy   = "Terraform"
-    Purpose     = "Database"
-  }
+}
+
+# This tells Spacelift to trust GitHub's token authority
+resource "spacelift_oidc_provider" "github_actions" {
+  name     = "GitHub Actions"
+  issuer   = "https://token.actions.githubusercontent.com"
+  
+  # The audience is what GitHub puts in the token to prove it's meant for Spacelift
+  audiences = ["spacelift"]
 }

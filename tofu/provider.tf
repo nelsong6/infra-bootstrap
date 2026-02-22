@@ -18,13 +18,6 @@ terraform {
       version = "~> 0.16.0"
     }
   }
-  backend "azurerm" {
-    resource_group_name  = "infra"
-    storage_account_name = "tfstate6792"
-    container_name       = "tfstate"
-    key                  = "infra.tfstate"
-    use_oidc             = true
-  }
 }
 
 provider "azurerm" {
