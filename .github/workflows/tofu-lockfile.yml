@@ -13,7 +13,7 @@ permissions:
 
 # Replaces the old template inputs for easy configuration
 env:
-  WORKING_DIR: 'tofu'
+  WORKING_DIR: 'tofu/provider'
 
 jobs:
   # ----------------------------------------------------------------
