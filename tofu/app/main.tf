@@ -39,13 +39,6 @@ resource "spacelift_stack" "stack" {
   }
 }
 
-data "spacelift_current_stack" "this" {}
-
-resource "spacelift_stack_dependency" "dependency" {
-  stack_id            = spacelift_stack.stack.id
-  depends_on_stack_id = data.spacelift_current_stack.this.id
-}
-
 data "spacelift_context" "global" {
   context_id = "global"
 }
