@@ -1,0 +1,18 @@
+version: "1"
+
+stack_defaults:
+  before_init:
+    - |
+      echo "Injecting master provider configurations..."
+
+      export TF_VAR_github_owner=$SPACELIFT_VCS_OWNER
+
+      # Download the master providers file directly into the OpenTofu workspace
+      curl -sSf -H "Authorization: token $TF_VAR_github_pat" \
+          -H "Accept: application/vnd.github.v3.raw" \
+          -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/contents/tofu/provider/shared_providers.tf
+
+      # Download the master lockfile to ensure checksums match
+      curl -sSf -H "Authorization: token $TF_VAR_github_pat" \
+          -H "Accept: application/vnd.github.v3.raw" \
+          -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/contents/tofu/provider/.terraform.lock.hcl

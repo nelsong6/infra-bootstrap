@@ -44,14 +44,14 @@ resource "spacelift_stack" "stack" {
       echo "Injecting master provider configurations..."
 
       # Download the master providers file directly into the OpenTofu workspace
-      curl -s -H "Authorization: token $GITHUB_TOKEN" \
+      curl -s -H "Authorization: token $TF_VAR_github_pat" \
           -H "Accept: application/vnd.github.v3.raw" \
-          -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/tofu/provider/shared_providers.tf
+          -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/contents/tofu/provider/shared_providers.tf
 
       # Download the master lockfile to ensure checksums match
-      curl -s -H "Authorization: token $GITHUB_TOKEN" \
+      curl -s -H "Authorization: token $TF_VAR_github_pat" \
           -H "Accept: application/vnd.github.v3.raw" \
-          -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/tofu/provider/.terraform.lock.hcl
+          -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/contents/tofu/provider/.terraform.lock.hcl
      EOF
   ]
   after_apply = [
