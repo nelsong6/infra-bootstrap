@@ -36,6 +36,8 @@ resource "spacelift_stack" "stack" {
   labels = ["azure"]
 }
 
+data "spacelift_current_stack" "this" {}
+
 # 1. Establish the dependency link between the stacks
 resource "spacelift_stack_dependency" "dependency" {
   # Assuming your spacelift_stack resource is named 'kill_me' or 'repo'
