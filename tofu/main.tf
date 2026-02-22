@@ -126,7 +126,7 @@ resource "spacelift_policy" "github_actions_oidc" {
   # 1. Grant Read-Only access to the space for any GitHub Action in your personal account.
   # This is exactly what the kill-me repo needs to run 'spacectl stack output'.
   space_read[space_id] {
-    space_id := "${var.spacelift_space_id}"
+    space_id := "root"
     input.session.type == "oidc"
     input.session.oidc.iss == "https://token.actions.githubusercontent.com"
     startswith(input.session.oidc.sub, "repo:nelsong6/")
@@ -135,7 +135,7 @@ resource "spacelift_policy" "github_actions_oidc" {
   # 2. Grant Admin access to the space ONLY for the infra-bootstrap main branch.
   # This prevents random feature branches or app repos from altering Spacelift configurations.
   space_admin[space_id] {
-    space_id := "${var.spacelift_space_id}"
+    space_id := "root"
     input.session.type == "oidc"
     input.session.oidc.iss == "https://token.actions.githubusercontent.com"
     input.session.oidc.sub == "repo:nelsong6/infra-bootstrap:ref:refs/heads/main"
@@ -146,7 +146,7 @@ resource "spacelift_policy" "github_actions_oidc" {
 resource "spacelift_policy" "smart_vcs_runs" {
   name        = "Smart VCS Triggers"
   description = "Ignores VCS triggers unless the stack has the 'vcs-auto-trigger' label"
-  type        = "PUSH"
+  type        = "GIT_PUSH"
   
   body = <<-EOF
   package spacelift
