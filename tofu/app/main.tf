@@ -34,7 +34,7 @@ resource "spacelift_stack" "stack" {
   name                    = var.name
   repository              = github_repository.repo.name
   branch                  = "main"
-  space_id                = var.spacelift_space_id
+  space_id                = "root"
   terraform_workflow_tool = "OPEN_TOFU"
   project_root            = "tofu"
   labels                  = ["azure"]

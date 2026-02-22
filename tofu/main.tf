@@ -147,7 +147,7 @@ resource "spacelift_policy" "github_actions_oidc" {
 resource "spacelift_context" "github_dispatch" {
   name        = "GitHub Actions Dispatch Handoff"
   description = "Fires a repository_dispatch webhook to GitHub after a successful apply"
-  space_id    = var.spacelift_space_id # Assuming you still have this variable
+  space_id    = "root" # Assuming you still have this variable
 
   after_apply = [
     <<-EOF
