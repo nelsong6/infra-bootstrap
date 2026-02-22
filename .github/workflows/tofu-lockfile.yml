@@ -38,7 +38,6 @@ jobs:
         run: |
           tofu init -upgrade
           tofu providers lock -platform=linux_amd64 -platform=darwin_arm64 -platform=windows_amd64
-          mv -f .terraform.lock.hcl provider/
 
       - name: Check for Changes & Post Summary
         id: diff
