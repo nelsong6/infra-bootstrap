@@ -11,6 +11,88 @@ on:
 permissions:
   contents: write
 
+# Replaces the old template inputs for easy configuration
+env:
+  WORKING_DIR: 'tofu'
+  ENV_NAME: 'prod'
+
 jobs:
-  update-lockfile:
-    uses: ./.github/workflows/update-lockfile-template.yml
+  # ----------------------------------------------------------------
+  # JOB 1: Check for Updates & Generate File
+  # ----------------------------------------------------------------
+  check-updates:
+    name: Check for Lockfile Updates
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    outputs:
+      lockfile_changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+
+      - name: Upgrade Providers & Generate Locks
+        run: |
+          tofu init -upgrade
+          tofu providers lock -platform=linux_amd64 -platform=darwin_arm64 -platform=windows_amd64
+          mv -f .terraform.lock.hcl provider/
+
+      - name: Check for Changes & Post Summary
+        id: diff
+        run: |
+          if ! git diff-index --quiet HEAD .terraform.lock.hcl; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            
+            echo "### ⚠️ Lockfile Updates Found" >> $GITHUB_STEP_SUMMARY
+            echo "A new provider version is available. The updated lockfile has been generated and is waiting for approval in the \`${{ env.ENV_NAME }}\` environment before being committed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "### ✅ Lockfile is up to date" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload New Lockfile as Artifact
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-lockfile
+          path: ${{ env.WORKING_DIR }}/.terraform.lock.hcl 
+          retention-days: 1
+
+  # ----------------------------------------------------------------
+  # JOB 2: Wait for Approval & Commit
+  # ----------------------------------------------------------------
+  commit-updates:
+    name: Approve and Commit
+    needs: check-updates
+    if: needs.check-updates.outputs.lockfile_changed == 'true'
+    runs-on: ubuntu-latest
+    
+    environment: ${{ env.ENV_NAME }}
+    
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Updated Lockfile
+        uses: actions/download-artifact@v4
+        with:
+          name: updated-lockfile
+          path: ${{ env.WORKING_DIR }} 
+
+      - name: Commit and Push to Main
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add .terraform.lock.hcl
+          
+          git commit -m "chore: update provider lockfile [skip ci]"
+          git push
