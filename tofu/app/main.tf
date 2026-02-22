@@ -1,3 +1,16 @@
+terraform {
+  required_providers {
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.0"
+    }
+    spacelift = {
+      source  = "spacelift-io/spacelift"
+      version = "~> 1.0"
+    }
+  }
+}
+
 variable "name" {
   type = string
 }
@@ -9,7 +22,7 @@ variable "spacelift_space_id" {
 
 resource "github_repository" "repo" {
   name       = var.name
-  visibility = "private"
+  visibility = "public"
   auto_init  = true
 }
 
