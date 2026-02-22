@@ -13,10 +13,6 @@ terraform {
       source  = "auth0/auth0"
       version = "~> 1.40.0" 
     }
-    infisical = {
-      source  = "infisical/infisical"
-      version = "~> 0.16.0"
-    }
     spacelift = {
       source  = "spacelift-io/spacelift"
       version = "~> 1.0"
@@ -33,25 +29,13 @@ provider "azuread" {
   use_oidc = true
 }
 
-provider "infisical" {
-  host = "https://app.infisical.com"
-  auth = {
-    oidc = {
-      identity_id                     = "474b7b4f-9205-48f6-8ae1-2f4f2a248af1"
-      token_environment_variable_name = "GITHUB_OIDC_TOKEN" 
-    }
-  }
-}
-
-ephemeral "infisical_secret" "auth0_secret" {
-  name         = "auth0"
-  env_slug     = "prod"
-  folder_path  = "/"
-  workspace_id = "a5846fc0-c6e3-4a47-9deb-b3c6e2da9240"
+variable "auth0_client_secret" {
+  type      = string
+  sensitive = true
 }
 
 provider "auth0" {
   domain        = "dev-gtdi5x5p0nmticqd.us.auth0.com"
   client_id     = "7qsN7zrBAh7TwhjEUcgtU46yOSs9TXbg"
-  client_secret = ephemeral.infisical_secret.auth0_secret.value
+  client_secret = var.auth0_client_secret
 }
