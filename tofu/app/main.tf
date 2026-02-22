@@ -20,6 +20,10 @@ variable "spacelift_space_id" {
   default = "root"
 }
 
+variable "github_dispatch_context_id" {
+  type = string
+}
+
 resource "github_repository" "repo" {
   name       = var.name
   visibility = "private"
@@ -50,6 +54,6 @@ resource "spacelift_context_attachment" "attachment" {
 }
 
 resource "spacelift_context_attachment" "dispatch_attachment" {
-  context_id = spacelift_context.github_dispatch.id
-  stack_id   = spacelift_stack.app_stack.id
+  context_id = var.github_dispatch_context_id
+  stack_id   = spacelift_stack.stack.id
 }
