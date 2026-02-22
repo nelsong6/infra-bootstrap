@@ -38,11 +38,9 @@ variable "auth0_client_secret" {
   sensitive = true
 }
 
-data "spacelift_current_stack" "this" {}
-
 provider "github" {
-  owner = "romaine-life"
-  token = var.spacelift_vcs_app_token
+  owner = "nelsong6"
+  token = var.github_pat
 }
 
 provider "auth0" {

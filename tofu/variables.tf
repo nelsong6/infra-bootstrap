@@ -2,8 +2,7 @@ variable "github_owner" {
   type = string 
 }
 
-variable "spacelift_vcs_app_token" {
+variable "github_pat" {
   type      = string
-  default   = null
   sensitive = true
 }
