@@ -52,7 +52,7 @@ resource "spacelift_stack" "stack" {
       -H "Accept: application/vnd.github+json" \
       -H "Authorization: Bearer $TF_VAR_github_pat" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
-      https://api.github.com/repos/nelsong6/$SPACELIFT_REPOSITORY/dispatches \
+      https://api.github.com/repos/${github_repository.repo.full_name}/dispatches \
       -d '{"event_type": "spacelift_infra_ready", "client_payload": {"commit_sha": "'"$SPACELIFT_COMMIT_SHA"'"}}'
     EOF
   ]
