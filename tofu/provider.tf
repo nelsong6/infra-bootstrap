@@ -39,7 +39,7 @@ variable "auth0_client_secret" {
 }
 
 provider "github" {
-  owner = var.github_owner
+  owner = var.repo_owner
   token = var.spacelift_vcs_app_token
 }
 
