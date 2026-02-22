@@ -20,10 +20,6 @@ variable "spacelift_space_id" {
   default = "root"
 }
 
-variable "smart_vcs_policy_id" {
-  type = string
-}
-
 resource "github_repository" "repo" {
   name       = var.name
   visibility = "private"

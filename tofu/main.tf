@@ -108,8 +108,7 @@ module "app" {
   for_each = local.apps
 
   name                 = each.value
-  spacelift_space_id   = "root"
-  smart_vcs_policy_id  = spacelift_policy.smart_vcs_runs.id
+  spacelift_space_id   = "root"  
 }
 
 resource "spacelift_policy" "github_actions_oidc" {
