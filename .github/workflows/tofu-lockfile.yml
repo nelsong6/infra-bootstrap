@@ -61,6 +61,7 @@ jobs:
           name: updated-lockfile
           path: ${{ env.WORKING_DIR }}/.terraform.lock.hcl 
           retention-days: 1
+          include-hidden-files: true
 
   # ----------------------------------------------------------------
   # JOB 2: Wait for Approval & Commit
