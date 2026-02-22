@@ -81,8 +81,3 @@ module "app" {
   name               = each.value
   spacelift_space_id = "root"
 }
-
-import {
-  to = module.app["kill-me"].github_repository.repo
-  id = "nelsong6/kill-me"
-}
