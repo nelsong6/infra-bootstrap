@@ -39,6 +39,21 @@ resource "spacelift_stack" "stack" {
   terraform_workflow_tool = "OPEN_TOFU"
   project_root            = "tofu"
   labels                  = ["azure"]
+  before_init = [
+    <<-EOF
+      echo "Injecting master provider configurations..."
+
+      # Download the master providers file directly into the OpenTofu workspace
+      curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3.raw" \
+          -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/tofu/provider/shared_providers.tf
+
+      # Download the master lockfile to ensure checksums match
+      curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3.raw" \
+          -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/tofu/provider/.terraform.lock.hcl
+     EOF
+  ]
   after_apply = [
     <<-EOF
     echo "Waking up GitHub Actions CD pipeline..."
