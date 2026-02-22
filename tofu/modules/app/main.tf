@@ -32,4 +32,5 @@ resource "spacelift_stack" "stack" {
   branch                  = "main"
   space_id                = var.spacelift_space_id
   terraform_workflow_tool = "OPEN_TOFU"
+  project_root = "tofu"
 }
