@@ -75,7 +75,7 @@ locals {
 }
 
 module "app" {
-  source   = "./modules/app"
+  source   = "./app"
   for_each = local.apps
 
   name               = each.value
