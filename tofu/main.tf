@@ -70,6 +70,20 @@ resource "azurerm_cosmosdb_account" "main" {
 
 }
 
+# ============================================================================
+# Azure App Configuration
+# ============================================================================
+# Shared App Configuration store for centralised key/value settings consumed
+# by all applications.  Other stacks discover the store via the infra_vars
+# Spacelift context variables (app_config_name / app_config_endpoint).
+
+resource "azurerm_app_configuration" "main" {
+  name                = "infra-appconfig"
+  resource_group_name = data.azurerm_resource_group.main.name
+  location            = data.azurerm_resource_group.main.location
+  sku                 = "free"
+}
+
 locals {
   apps = toset(["kill-me"])
 
@@ -85,6 +99,8 @@ locals {
     cosmos_db_account_name         = azurerm_cosmosdb_account.main.name
     cosmos_db_account_id           = azurerm_cosmosdb_account.main.id
     cosmos_db_endpoint             = azurerm_cosmosdb_account.main.endpoint
+    azure_app_config_endpoint      = azurerm_app_configuration.main.endpoint
+    azure_app_config_resource_id   = azurerm_app_configuration.main.id
     azure_subscription_id          = data.azurerm_client_config.current.subscription_id
     azure_tenant_id                = data.azurerm_client_config.current.tenant_id
   }

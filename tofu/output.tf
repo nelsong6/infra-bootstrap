@@ -77,6 +77,20 @@ output "cosmos_db_endpoint" {
 }
 
 # ============================================================================
+# App Configuration Outputs
+# ============================================================================
+
+output "azure_app_config_endpoint" {
+  value       = azurerm_app_configuration.main.endpoint
+  description = "Endpoint URL for the shared Azure App Configuration store"
+}
+
+output "azure_app_config_resource_id" {
+  value       = azurerm_app_configuration.main.id
+  description = "Resource ID of the shared Azure App Configuration store"
+}
+
+# ============================================================================
 # Azure Identity Outputs
 # ============================================================================
 
