@@ -1,6 +1,6 @@
-# variable "repo_owner" { 
-#   type = string 
-# }
+variable "github_owner" { 
+  type = string 
+}
 
 variable "spacelift_vcs_app_token" {
   type      = string

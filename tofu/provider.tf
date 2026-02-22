@@ -41,7 +41,7 @@ variable "auth0_client_secret" {
 data "spacelift_current_stack" "this" {}
 
 provider "github" {
-  owner = data.spacelift_current_stack.this.repository_owner
+  owner = var.github_owner
   token = var.spacelift_vcs_app_token
 }
 
