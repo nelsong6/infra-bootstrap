@@ -109,7 +109,6 @@ module "app" {
 
   name                       = each.value
   spacelift_space_id         = "root"
-  github_dispatch_context_id = spacelift_context.github_dispatch.id
 }
 
 resource "spacelift_policy" "github_actions_oidc" {
