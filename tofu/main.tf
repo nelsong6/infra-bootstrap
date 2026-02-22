@@ -69,12 +69,3 @@ resource "azurerm_cosmosdb_account" "main" {
   }
 
 }
-
-# This tells Spacelift to trust GitHub's token authority
-resource "spacelift_oidc_provider" "github_actions" {
-  name     = "GitHub Actions"
-  issuer   = "https://token.actions.githubusercontent.com"
-  
-  # The audience is what GitHub puts in the token to prove it's meant for Spacelift
-  audiences = ["spacelift"]
-}
