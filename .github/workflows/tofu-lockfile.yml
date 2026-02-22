@@ -14,7 +14,6 @@ permissions:
 # Replaces the old template inputs for easy configuration
 env:
   WORKING_DIR: 'tofu'
-  ENV_NAME: 'prod'
 
 jobs:
   # ----------------------------------------------------------------
@@ -48,7 +47,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
             
             echo "### ⚠️ Lockfile Updates Found" >> $GITHUB_STEP_SUMMARY
-            echo "A new provider version is available. The updated lockfile has been generated and is waiting for approval in the \`${{ env.ENV_NAME }}\` environment before being committed." >> $GITHUB_STEP_SUMMARY
+            echo "A new provider version is available. The updated lockfile has been generated and is waiting for approval in the \`prod\` environment before being committed." >> $GITHUB_STEP_SUMMARY
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "### ✅ Lockfile is up to date" >> $GITHUB_STEP_SUMMARY
@@ -71,7 +70,7 @@ jobs:
     if: needs.check-updates.outputs.lockfile_changed == 'true'
     runs-on: ubuntu-latest
     
-    environment: ${{ env.ENV_NAME }}
+    environment: prod
     
     defaults:
       run:
