@@ -33,11 +33,6 @@ provider "azuread" {
   use_oidc = true
 }
 
-variable "auth0_client_secret" {
-  type      = string
-  sensitive = true
-}
-
 provider "github" {
   owner = "nelsong6"
   token = var.github_pat

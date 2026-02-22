@@ -35,3 +35,38 @@ resource "spacelift_stack" "stack" {
   project_root = "tofu"
   labels = ["azure"]
 }
+
+# 1. Establish the dependency link between the stacks
+resource "spacelift_stack_dependency" "infra_to_kill_me" {
+  # Assuming your spacelift_stack resource is named 'kill_me' or 'repo'
+  stack_id            = spacelift_stack.kill_me.id 
+  depends_on_stack_id = data.spacelift_current_stack.this.id
+}
+
+# 2. Define the list of outputs you want to share
+locals {
+  kill_me_inputs = [
+    "resource_group_name",
+    "resource_group_location",
+    "resource_group_id",
+    "dns_zone_name",
+    "dns_zone_id",
+    "dns_zone_nameservers",
+    "container_app_environment_name",
+    "container_app_environment_id",
+    "cosmos_db_account_name",
+    "cosmos_db_account_id",
+    "cosmos_db_endpoint",
+    "azure_subscription_id",
+    "azure_tenant_id"
+  ]
+}
+
+# 3. Loop through the list to create the references dynamically
+resource "spacelift_stack_dependency_reference" "kill_me_refs" {
+  for_each = toset(local.kill_me_inputs)
+
+  stack_dependency_id = spacelift_stack_dependency.infra_to_kill_me.id
+  output_name         = each.value
+  input_name          = "TF_VAR_${each.value}"
+}
