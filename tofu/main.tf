@@ -107,6 +107,59 @@ module "app" {
   source   = "./app"
   for_each = local.apps
 
-  name               = each.value
-  spacelift_space_id = "root"
+  name                 = each.value
+  spacelift_space_id   = "root"
+  smart_vcs_policy_id  = spacelift_policy.smart_vcs_runs.id
 }
+
+resource "spacelift_policy" "github_actions_oidc" {
+  name        = "GitHub Actions OIDC Login"
+  description = "Allows GitHub Actions to authenticate via OIDC to read stack outputs"
+  type        = "LOGIN"
+  
+  # Attaching it to the same space as your stacks
+  space_id    = var.spacelift_space_id 
+  
+  body = <<-EOF
+  package spacelift
+
+  # 1. Grant Read-Only access to the space for any GitHub Action in your personal account.
+  # This is exactly what the kill-me repo needs to run 'spacectl stack output'.
+  space_read[space_id] {
+    space_id := "${var.spacelift_space_id}"
+    input.session.type == "oidc"
+    input.session.oidc.iss == "https://token.actions.githubusercontent.com"
+    startswith(input.session.oidc.sub, "repo:nelsong6/")
+  }
+
+  # 2. Grant Admin access to the space ONLY for the infra-bootstrap main branch.
+  # This prevents random feature branches or app repos from altering Spacelift configurations.
+  space_admin[space_id] {
+    space_id := "${var.spacelift_space_id}"
+    input.session.type == "oidc"
+    input.session.oidc.iss == "https://token.actions.githubusercontent.com"
+    input.session.oidc.sub == "repo:nelsong6/infra-bootstrap:ref:refs/heads/main"
+  }
+  EOF
+}
+
+resource "spacelift_policy" "smart_vcs_runs" {
+  name        = "Smart VCS Triggers"
+  description = "Ignores VCS triggers unless the stack has the 'vcs-auto-trigger' label"
+  type        = "PUSH"
+  
+  body = <<-EOF
+  package spacelift
+
+  # Check if the stack has our special bypass label
+  has_bypass_label {
+    input.stack.labels[_] == "vcs-auto-trigger"
+  }
+
+  # Ignore the push ONLY IF it does not have the bypass label
+  ignore {
+    not has_bypass_label
+  }
+  EOF
+}
+
