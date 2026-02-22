@@ -79,6 +79,5 @@ module "app" {
   for_each = local.apps
 
   name               = each.value
-  github_owner       = var.repo_owner
   spacelift_space_id = "root"
 }
