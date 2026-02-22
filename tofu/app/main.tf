@@ -48,3 +48,8 @@ resource "spacelift_context_attachment" "attachment" {
   stack_id   = spacelift_stack.stack.id # Your kill-me stack ID
   priority   = 0
 }
+
+resource "spacelift_context_attachment" "dispatch_attachment" {
+  context_id = spacelift_context.github_dispatch.id
+  stack_id   = spacelift_stack.app_stack.id
+}

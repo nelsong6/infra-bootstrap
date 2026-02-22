@@ -141,3 +141,23 @@ resource "spacelift_policy" "github_actions_oidc" {
   }
   EOF
 }
+
+# 1. Create the dedicated handoff context
+resource "spacelift_context" "github_dispatch" {
+  name        = "GitHub Actions Dispatch Handoff"
+  description = "Fires a repository_dispatch webhook to GitHub after a successful apply"
+  space_id    = var.spacelift_space_id # Assuming you still have this variable
+
+  after_apply = [
+    <<-EOF
+    echo "Infrastructure provisioned. Waking up GitHub Actions CD pipeline..."
+    curl -L \
+      -X POST \
+      -H "Accept: application/vnd.github+json" \
+      -H "Authorization: Bearer $GITHUB_PAT" \
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      https://api.github.com/repos/nelsong6/$SPACELIFT_REPOSITORY/dispatches \
+      -d '{"event_type": "spacelift_infra_ready", "client_payload": {"commit_sha": "'"$SPACELIFT_COMMIT_SHA"'"}}'
+    EOF
+  ]
+}
