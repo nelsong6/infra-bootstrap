@@ -140,18 +140,18 @@ module "app" {
   source   = "./app"
   for_each = local.apps
 
-  name                       = each.value
-  spacelift_space_id         = "root"
+  name               = each.value
+  spacelift_space_id = "root"
 }
 
 resource "spacelift_policy" "github_actions_oidc" {
   name        = "GitHub Actions OIDC Login"
   description = "Allows GitHub Actions to authenticate via OIDC to read stack outputs"
   type        = "LOGIN"
-  
+
   # Attaching it to the same space as your stacks
-  space_id    = "root"
-  
+  space_id = "root"
+
   body = <<-EOF
   package spacelift
 

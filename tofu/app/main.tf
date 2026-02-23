@@ -32,14 +32,14 @@ resource "github_repository" "repo" {
 }
 
 resource "spacelift_stack" "stack" {
-  name                    = var.name
-  repository              = github_repository.repo.name
-  branch                  = "main"
-  space_id                = "root"
-  terraform_workflow_tool = "OPEN_TOFU"
-  project_root            = "tofu"
-  project_globs           = [".github/workflows/**"]
-  labels                  = ["azure"]
+  name                     = var.name
+  repository               = github_repository.repo.name
+  branch                   = "main"
+  space_id                 = "root"
+  terraform_workflow_tool  = "OPEN_TOFU"
+  project_root             = "tofu"
+  additional_project_globs = [".github/workflows/**"]
+  labels                   = ["azure"]
   before_init = [
     "echo \"Injecting master provider configurations...\"",
     "curl -sSf -H \"Authorization: token $TF_VAR_github_pat\" -H \"Accept: application/vnd.github.v3.raw\" -O -L https://api.github.com/repos/nelsong6/infra-bootstrap/contents/tofu/provider/shared_providers.tf",
@@ -58,7 +58,7 @@ resource "spacelift_stack" "stack" {
     EOF
   ]
   lifecycle {
-    ignore_changes = [ branch ]
+    ignore_changes = [branch]
   }
 }
 
