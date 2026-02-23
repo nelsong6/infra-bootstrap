@@ -20,6 +20,10 @@ variable "spacelift_space_id" {
   default = "root"
 }
 
+variable "key_vault_name" {
+  type = string
+}
+
 resource "github_repository" "repo" {
   name       = var.name
   visibility = "public"
@@ -70,4 +74,10 @@ resource "spacelift_context_attachment" "attachment" {
   context_id = data.spacelift_context.global.id
   stack_id   = spacelift_stack.stack.id # Your kill-me stack ID
   priority   = 0
+}
+
+resource "github_actions_variable" "key_vault_name" {
+  repository    = github_repository.repo.name
+  variable_name = "AZURE_KEY_VAULT_NAME"
+  value         = var.key_vault_name
 }
