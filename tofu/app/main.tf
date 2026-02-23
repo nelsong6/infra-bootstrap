@@ -70,3 +70,34 @@ resource "spacelift_context_attachment" "attachment" {
   stack_id   = spacelift_stack.stack.id # Your kill-me stack ID
   priority   = 0
 }
+
+resource "spacelift_policy" "custom_push" {
+  name = "${var.name}-custom-push-triggers"
+  type = "PUSH"
+  body = <<-EOF
+  package spacelift
+
+  # Define which directories trigger a run
+  is_tracked_path(path) { startswith(path, "tofu/") }
+  is_tracked_path(path) { startswith(path, ".github/workflows/") }
+
+  # Track (apply) if it's the main branch and a tracked file changed
+  track {
+    affected := input.push.affected_files[_]
+    is_tracked_path(affected)
+    input.push.branch == "refs/heads/main"
+  }
+
+  # Propose (plan) if it's a PR/feature branch and a tracked file changed
+  propose {
+    affected := input.push.affected_files[_]
+    is_tracked_path(affected)
+    input.push.branch != "refs/heads/main"
+  }
+  EOF
+}
+
+resource "spacelift_policy_attachment" "custom_push_attachment" {
+  policy_id = spacelift_policy.custom_push.id
+  stack_id  = spacelift_stack.stack.id
+}
