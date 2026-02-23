@@ -73,7 +73,7 @@ resource "spacelift_context_attachment" "attachment" {
 
 resource "spacelift_policy" "custom_push" {
   name = "${var.name}-custom-push-triggers"
-  type = "PUSH"
+  type = "GIT_PUSH"
   body = <<-EOF
   package spacelift
 
