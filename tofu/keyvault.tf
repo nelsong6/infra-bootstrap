@@ -16,9 +16,9 @@ resource "azurerm_key_vault" "main" {
   purge_protection_enabled   = false
 }
 
-# Grant the service principal running Tofu data-plane access to manage secrets
-resource "azurerm_role_assignment" "kv_secrets_officer" {
+# Grant the service principal running Tofu data-plane access to manage the key vault
+resource "azurerm_role_assignment" "kv_administrator" {
   scope                = azurerm_key_vault.main.id
-  role_definition_name = "Key Vault Secrets Officer"
+  role_definition_name = "Key Vault Administrator"
   principal_id         = data.azurerm_client_config.current.object_id
 }
