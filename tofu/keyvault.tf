@@ -5,7 +5,7 @@
 # RBAC authorization is used for access control (recommended over access policies).
 
 resource "azurerm_key_vault" "main" {
-  name                = "infra-kv"
+  name                = "infra-kv-romaine"
   resource_group_name = data.azurerm_resource_group.main.name
   location            = data.azurerm_resource_group.main.location
   tenant_id           = data.azurerm_client_config.current.tenant_id
