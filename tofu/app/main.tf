@@ -38,6 +38,7 @@ resource "spacelift_stack" "stack" {
   space_id                = "root"
   terraform_workflow_tool = "OPEN_TOFU"
   project_root            = "tofu"
+  project_globs           = [".github/workflows/**"]
   labels                  = ["azure"]
   before_init = [
     "echo \"Injecting master provider configurations...\"",
@@ -52,8 +53,8 @@ resource "spacelift_stack" "stack" {
       -H "Accept: application/vnd.github+json" \
       -H "Authorization: Bearer $TF_VAR_github_pat" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
-      https://api.github.com/repos/${github_repository.repo.full_name}/dispatches \
-      -d '{"event_type": "spacelift_infra_ready", "client_payload": {"commit_sha": "'"$SPACELIFT_COMMIT_SHA"'"}}'
+      https://api.github.com/repos/${github_repository.repo.full_name}/actions/workflows/full-stack-deploy.yml/dispatches \
+      -d '{"ref": "'"$SPACELIFT_COMMIT_BRANCH"'", "inputs": {"commit_sha": "'"$SPACELIFT_COMMIT_SHA"'"}}'
     EOF
   ]
   lifecycle {
@@ -69,35 +70,4 @@ resource "spacelift_context_attachment" "attachment" {
   context_id = data.spacelift_context.global.id
   stack_id   = spacelift_stack.stack.id # Your kill-me stack ID
   priority   = 0
-}
-
-resource "spacelift_policy" "custom_push" {
-  name = "${var.name}-custom-push-triggers"
-  type = "GIT_PUSH"
-  body = <<-EOF
-  package spacelift
-
-  # Define which directories trigger a run
-  is_tracked_path(path) { startswith(path, "tofu/") }
-  is_tracked_path(path) { startswith(path, ".github/workflows/") }
-
-  # Track (apply) if it's the main branch and a tracked file changed
-  track {
-    affected := input.push.affected_files[_]
-    is_tracked_path(affected)
-    input.push.branch == "refs/heads/main"
-  }
-
-  # Propose (plan) if it's a PR/feature branch and a tracked file changed
-  propose {
-    affected := input.push.affected_files[_]
-    is_tracked_path(affected)
-    input.push.branch != "refs/heads/main"
-  }
-  EOF
-}
-
-resource "spacelift_policy_attachment" "custom_push_attachment" {
-  policy_id = spacelift_policy.custom_push.id
-  stack_id  = spacelift_stack.stack.id
 }
