@@ -98,3 +98,22 @@ output "azure_tenant_id" {
   value       = data.azurerm_client_config.current.tenant_id
   description = "Azure tenant ID"
 }
+
+# ============================================================================
+# Key Vault Outputs
+# ============================================================================
+
+output "key_vault_name" {
+  value       = azurerm_key_vault.main.name
+  description = "Name of the shared Key Vault"
+}
+
+output "key_vault_uri" {
+  value       = azurerm_key_vault.main.vault_uri
+  description = "URI of the shared Key Vault (for secret lookups)"
+}
+
+output "key_vault_id" {
+  value       = azurerm_key_vault.main.id
+  description = "Resource ID of the shared Key Vault"
+}

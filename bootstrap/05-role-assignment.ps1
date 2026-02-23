@@ -1,5 +1,5 @@
 # ============================================================================
-# Role Assignment - Owner, App Configuration Data Owner, App Configuration Data Reader
+# Role Assignment - Owner, App Configuration Data Owner, App Configuration Data Reader, Key Vault Secrets Officer
 # ============================================================================
 
 # Resolve SP_ID from Azure if the previous step didn't set it
@@ -47,4 +47,17 @@ if ($EXISTING_APPCONFIG_READER) {
         --role "App Configuration Data Reader" `
         --scope $_scope
     Write-Host "[OK] App Configuration Data Reader role assigned`n" -ForegroundColor Green
+}
+
+Write-Host "[4/9] Granting Key Vault Secrets Officer role to service principal..." -ForegroundColor Yellow
+$EXISTING_KV_SECRETS_OFFICER = az role assignment list --assignee $script:SP_ID --role "Key Vault Secrets Officer" --scope $_scope --query "[0].id" -o tsv
+
+if ($EXISTING_KV_SECRETS_OFFICER) {
+    Write-Host "[OK] Key Vault Secrets Officer role already assigned`n" -ForegroundColor Green
+} else {
+    az role assignment create `
+        --assignee $script:SP_ID `
+        --role "Key Vault Secrets Officer" `
+        --scope $_scope
+    Write-Host "[OK] Key Vault Secrets Officer role assigned`n" -ForegroundColor Green
 }

@@ -120,6 +120,9 @@ locals {
     azure_app_config_resource_id   = azurerm_app_configuration.main.id
     azure_subscription_id          = data.azurerm_client_config.current.subscription_id
     azure_tenant_id                = data.azurerm_client_config.current.tenant_id
+    key_vault_name                 = azurerm_key_vault.main.name
+    key_vault_uri                  = azurerm_key_vault.main.vault_uri
+    key_vault_id                   = azurerm_key_vault.main.id
   }
 }
 
