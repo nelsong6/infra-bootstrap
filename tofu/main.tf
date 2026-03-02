@@ -152,13 +152,3 @@ resource "spacelift_policy" "github_actions_oidc" {
 }
 
 resource "null_resource" "main" {}
-
-import {
-  to = module.app["my-homepage"].github_repository.repo
-  id = "my-homepage"
-}
-
-import {
-  to = module.app["bender-world"].github_repository.repo
-  id = "bender-world"
-}
