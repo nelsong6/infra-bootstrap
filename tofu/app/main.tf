@@ -85,7 +85,7 @@ resource "spacelift_stack" "stack" {
   ]
 
   lifecycle {
-    ignore_changes = [branch]
+    ignore_changes = [branch, autodeploy, terraform_version]
   }
 }
 
