@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(git -C /d/Repositories/infra-bootstrap log --oneline -20)",
+      "Bash(git -C /d/Repositories/infra-bootstrap show:*)",
+      "Bash(git ls-files:*)",
+      "Bash(Remove-Item -Path \"d:\\\\repos\\\\landing-page\\\\tofu\" -Recurse -Force)"
+    ]
+  }
+}

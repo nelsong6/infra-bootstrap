@@ -1,0 +1,20 @@
+version: "1"
+
+stack_defaults:
+  before_init:
+    - 'echo "Exchanging native Spacelift OIDC token for Azure access token..."'
+    - 'AZ_TOKEN_RES=$(curl -sS -X POST "https://login.microsoftonline.com/$ARM_TENANT_ID/oauth2/v2.0/token" -d "client_id=$ARM_CLIENT_ID" -d "scope=https://vault.azure.net/.default" -d "grant_type=client_credentials" -d "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" -d "client_assertion=$SPACELIFT_OIDC_TOKEN")'
+    - 'if echo "$AZ_TOKEN_RES" | grep -q "error"; then echo "❌ Azure Auth Failed: $AZ_TOKEN_RES"; exit 1; fi'
+    - 'AZ_TOKEN=$(echo "$AZ_TOKEN_RES" | jq -r .access_token)'
+    - 'echo "Fetching GitHub PAT from Key Vault..."'
+    - 'KV_RES=$(curl -sS "https://romaine-kv.vault.azure.net/secrets/github-pat?api-version=7.4" -H "Authorization: Bearer $AZ_TOKEN")'
+    - 'if echo "$KV_RES" | grep -q "error"; then echo "❌ Key Vault Fetch Failed: $KV_RES"; exit 1; fi'
+    - 'export TF_VAR_github_pat=$(echo "$KV_RES" | jq -r .value)'
+    - 'export TF_VAR_github_owner="$SPACELIFT_VCS_OWNER"'
+    - 'export ARM_OIDC_TOKEN=$SPACELIFT_OIDC_TOKEN'
+    - 'echo "Injecting master provider configurations..."'
+    - 'curl -f -sS -H "Authorization: token $TF_VAR_github_pat" -O -L "https://raw.githubusercontent.com/nelsong6/infra-bootstrap/main/tofu/provider/shared_providers.tf"'
+    - 'curl -f -sS -H "Authorization: token $TF_VAR_github_pat" -O -L "https://raw.githubusercontent.com/nelsong6/infra-bootstrap/main/tofu/provider/.terraform.lock.hcl"'
+  after_apply:
+    - 'echo "Dispatching landing-page deploy..."'
+    - 'curl --fail-with-body -sS -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $TF_VAR_github_pat" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/nelsong6/landing-page/actions/workflows/full-stack-deploy.yml/dispatches -d ''{"ref": "main"}'''

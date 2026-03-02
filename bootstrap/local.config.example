@@ -1,0 +1,23 @@
+# Bootstrap local configuration
+# Copy this file to local.config and fill in your values.
+# local.config is gitignored — never commit it.
+
+[azure]
+subscription_id = 00000000-0000-0000-0000-000000000000
+# application_id of the enterprise app created by Spacelift (copied from Spacelift → Azure integration)
+application_id  = 00000000-0000-0000-0000-000000000000
+# keyvault_name is optional — derived from the folder name if not set.
+# Uncomment and set manually only if you need to override it.
+# keyvault_name = my-keyvault
+
+[github]
+# repo is optional — inferred automatically from "git remote get-url origin"
+# Uncomment and set manually only if you need to override it.
+# repo = owner/repo-name
+
+[google]
+project_id = my-gcp-project-id
+
+[spacelift]
+hostname  = myorg.app.spacelift.io
+space_id  = root
