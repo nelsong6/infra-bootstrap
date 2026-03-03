@@ -107,6 +107,7 @@ module "app" {
   for_each = toset(
     [
       "bender-world",
+      "eight-queens",
       "kill-me",
       "my-homepage"
     ]
