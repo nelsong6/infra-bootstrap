@@ -104,16 +104,15 @@ resource "azurerm_app_configuration_key" "auth0_audience" {
 
 module "app" {
   source   = "./app"
-  for_each = toset(
-    [
-      "bender-world",
-      "eight-queens",
-      "kill-me",
-      "my-homepage"
-    ]
-  )
+  for_each = {
+    "bender-world"  = { has_backend = false }
+    "eight-queens"  = { has_backend = false }
+    "kill-me"       = { has_backend = true }
+    "my-homepage"   = { has_backend = true }
+  }
 
-  name               = each.value
+  name               = each.key
+  has_backend        = each.value.has_backend
   spacelift_space_id = "root"
   key_vault_name      = data.azurerm_key_vault.main.name
   arm_client_id       = data.azurerm_client_config.current.client_id

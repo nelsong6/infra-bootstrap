@@ -40,6 +40,12 @@ variable "arm_subscription_id" {
   type = string
 }
 
+variable "has_backend" {
+  description = "Whether the app has a backend (Container App + Cosmos DB + App Configuration)"
+  type        = bool
+  default     = true
+}
+
 resource "github_repository" "repo" {
   name       = var.name
   visibility = "public"
@@ -109,30 +115,35 @@ resource "spacelift_stack_dependency_reference" "dns_zone_name" {
 }
 
 resource "spacelift_stack_dependency_reference" "container_app_environment_id" {
+  count               = var.has_backend ? 1 : 0
   stack_dependency_id = spacelift_stack_dependency.infra.id
   output_name         = "container_app_environment_id"
   input_name          = "TF_VAR_infra_container_app_environment_id"
 }
 
 resource "spacelift_stack_dependency_reference" "cosmos_db_account_name" {
+  count               = var.has_backend ? 1 : 0
   stack_dependency_id = spacelift_stack_dependency.infra.id
   output_name         = "cosmos_db_account_name"
   input_name          = "TF_VAR_infra_cosmos_db_account_name"
 }
 
 resource "spacelift_stack_dependency_reference" "cosmos_db_account_id" {
+  count               = var.has_backend ? 1 : 0
   stack_dependency_id = spacelift_stack_dependency.infra.id
   output_name         = "cosmos_db_account_id"
   input_name          = "TF_VAR_infra_cosmos_db_account_id"
 }
 
 resource "spacelift_stack_dependency_reference" "azure_app_config_endpoint" {
+  count               = var.has_backend ? 1 : 0
   stack_dependency_id = spacelift_stack_dependency.infra.id
   output_name         = "azure_app_config_endpoint"
   input_name          = "TF_VAR_infra_azure_app_config_endpoint"
 }
 
 resource "spacelift_stack_dependency_reference" "azure_app_config_resource_id" {
+  count               = var.has_backend ? 1 : 0
   stack_dependency_id = spacelift_stack_dependency.infra.id
   output_name         = "azure_app_config_resource_id"
   input_name          = "TF_VAR_infra_azure_app_config_resource_id"
