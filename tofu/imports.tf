@@ -28,17 +28,17 @@ import {
 
 import {
   to = azurerm_app_configuration_key.cosmos_db_endpoint
-  id = "https://infra-appconfig.azconfig.io/kv/cosmos_db_endpoint?label=%00"
+  id = "https://infra-appconfig.azconfig.io/kv/cosmos_db_endpoint?label="
 }
 
 import {
   to = azurerm_app_configuration_key.auth0_domain
-  id = "https://infra-appconfig.azconfig.io/kv/AUTH0_DOMAIN?label=%00"
+  id = "https://infra-appconfig.azconfig.io/kv/AUTH0_DOMAIN?label="
 }
 
 import {
   to = azurerm_app_configuration_key.auth0_audience
-  id = "https://infra-appconfig.azconfig.io/kv/AUTH0_AUDIENCE?label=%00"
+  id = "https://infra-appconfig.azconfig.io/kv/AUTH0_AUDIENCE?label="
 }
 
 # ============================================================================
@@ -128,39 +128,37 @@ import {
   id = "/applications/59a001a7-6f87-4979-a850-efddb7c2459d"
 }
 
-import {
-  to = azuread_application_password.microsoft_login
-  id = "/applications/59a001a7-6f87-4979-a850-efddb7c2459d/passwords/55462e70-b513-4a89-aa3f-7d6fede0bf31"
-}
+# NOTE: azuread_application_password doesn't support import.
+# The existing password will be replaced on first apply (rotation).
 
 import {
   to = azurerm_key_vault_secret.microsoft_oauth_client_id
-  id = "https://romaine-kv.vault.azure.net/secrets/microsoft-oauth-client-id"
+  id = "https://romaine-kv.vault.azure.net/secrets/microsoft-oauth-client-id/221ff7fd46cc46a2b607da070138afce"
 }
 
 import {
   to = azurerm_key_vault_secret.microsoft_oauth_client_secret
-  id = "https://romaine-kv.vault.azure.net/secrets/microsoft-oauth-client-secret"
+  id = "https://romaine-kv.vault.azure.net/secrets/microsoft-oauth-client-secret/e1bfff60610c42e3a84188b143256bd1"
 }
 
 import {
   to = azurerm_app_configuration_key.google_oauth_client_id
-  id = "https://infra-appconfig.azconfig.io/kv/google_oauth_client_id?label=%00"
+  id = "https://infra-appconfig.azconfig.io/kv/google_oauth_client_id?label="
 }
 
 import {
   to = azurerm_app_configuration_key.google_oauth_client_secret
-  id = "https://infra-appconfig.azconfig.io/kv/google_oauth_client_secret?label=%00"
+  id = "https://infra-appconfig.azconfig.io/kv/google_oauth_client_secret?label="
 }
 
 import {
   to = azurerm_app_configuration_key.microsoft_oauth_client_id
-  id = "https://infra-appconfig.azconfig.io/kv/microsoft_oauth_client_id?label=%00"
+  id = "https://infra-appconfig.azconfig.io/kv/microsoft_oauth_client_id?label="
 }
 
 import {
   to = azurerm_app_configuration_key.microsoft_oauth_client_secret
-  id = "https://infra-appconfig.azconfig.io/kv/microsoft_oauth_client_secret?label=%00"
+  id = "https://infra-appconfig.azconfig.io/kv/microsoft_oauth_client_secret?label="
 }
 
 # ============================================================================
@@ -179,12 +177,12 @@ import {
 
 import {
   to = azuread_application_federated_identity_credential.landing_page_github_actions_main
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/66929b78-6058-4367-885e-d3ce95a1f69b"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/66929b78-6058-4367-885e-d3ce95a1f69b"
 }
 
 import {
   to = azuread_application_federated_identity_credential.landing_page_github_actions_prod
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/233a4825-75ac-459b-b444-42489f38baeb"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/233a4825-75ac-459b-b444-42489f38baeb"
 }
 
 import {
@@ -218,12 +216,12 @@ import {
 
 import {
   to = module.app["bender-world"].azuread_application_federated_identity_credential.github_actions_main
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/e153d5ad-62d9-4d06-a179-204ee3e2d10f"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/e153d5ad-62d9-4d06-a179-204ee3e2d10f"
 }
 
 import {
   to = module.app["bender-world"].azuread_application_federated_identity_credential.github_actions_prod
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/ae88a7fe-99ab-4845-b1ae-bbe06387c41f"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/ae88a7fe-99ab-4845-b1ae-bbe06387c41f"
 }
 
 import {
@@ -262,12 +260,12 @@ import {
 
 import {
   to = module.app["eight-queens"].azuread_application_federated_identity_credential.github_actions_main
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/fb2561f7-d750-4687-b815-121c73e79045"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/fb2561f7-d750-4687-b815-121c73e79045"
 }
 
 import {
   to = module.app["eight-queens"].azuread_application_federated_identity_credential.github_actions_prod
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/2745f2e9-e7c3-4790-9a94-918c46dc4de4"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/2745f2e9-e7c3-4790-9a94-918c46dc4de4"
 }
 
 import {
@@ -301,12 +299,12 @@ import {
 
 import {
   to = module.app["kill-me"].azuread_application_federated_identity_credential.github_actions_main
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/0ebdcb7c-b48a-470a-bf19-47df16957351"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/0ebdcb7c-b48a-470a-bf19-47df16957351"
 }
 
 import {
   to = module.app["kill-me"].azuread_application_federated_identity_credential.github_actions_prod
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/1e58155e-4b12-4469-b5ec-b7411871a737"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/1e58155e-4b12-4469-b5ec-b7411871a737"
 }
 
 import {
@@ -340,12 +338,12 @@ import {
 
 import {
   to = module.app["my-homepage"].azuread_application_federated_identity_credential.github_actions_main
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/30ee5c81-2df2-4b0d-87cf-ae5af2b9eeb8"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/30ee5c81-2df2-4b0d-87cf-ae5af2b9eeb8"
 }
 
 import {
   to = module.app["my-homepage"].azuread_application_federated_identity_credential.github_actions_prod
-  id = "/applications/c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredentials/4390a8fb-0177-403a-8ce1-fb5f9449525e"
+  id = "c343f4d9-5bdc-4938-bcd2-0f326c3ae478/federatedIdentityCredential/4390a8fb-0177-403a-8ce1-fb5f9449525e"
 }
 
 import {
