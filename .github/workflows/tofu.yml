@@ -73,10 +73,10 @@ jobs:
           TF_VAR_github_owner: nelsong6
           AUTH0_CLIENT_SECRET: ${{ steps.secrets.outputs.auth0_secret }}
         run: |
-          set +e
+          set +eo pipefail
           tofu plan -detailed-exitcode -out=tfplan 2>&1 | tee plan_output.txt
-          EXIT_CODE=$?
-          set -e
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -eo pipefail
 
           if [ $EXIT_CODE -eq 0 ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
