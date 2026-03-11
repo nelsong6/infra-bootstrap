@@ -166,6 +166,21 @@ import {
 # ============================================================================
 
 import {
+  to = azurerm_resource_group.landing
+  id = "/subscriptions/${local._sub}/resourceGroups/landing-page-rg"
+}
+
+import {
+  to = azurerm_static_web_app.landing
+  id = "/subscriptions/${local._sub}/resourceGroups/landing-page-rg/providers/Microsoft.Web/staticSites/landing-page-app"
+}
+
+import {
+  to = azurerm_dns_a_record.landing_apex
+  id = "/subscriptions/${local._sub}/resourceGroups/${local._rg}/providers/Microsoft.Network/dnsZones/${local._dns}/A/@"
+}
+
+import {
   to = azurerm_static_web_app_custom_domain.landing
   id = "/subscriptions/${local._sub}/resourceGroups/landing-page-rg/providers/Microsoft.Web/staticSites/landing-page-app/customDomains/romaine.life"
 }
