@@ -9,6 +9,10 @@ on:
     paths: ['tofu/**']
   workflow_dispatch:
 
+concurrency:
+  group: tofu-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: read
