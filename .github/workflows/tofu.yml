@@ -1,0 +1,211 @@
+name: Infrastructure
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['tofu/**']
+  push:
+    branches: [main]
+    paths: ['tofu/**']
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: '1.9.0'
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARM_CLIENT_ID }}
+          tenant-id: ${{ vars.ARM_TENANT_ID }}
+          subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
+
+      - name: Fetch secrets from Key Vault
+        id: secrets
+        run: |
+          GITHUB_PAT=$(az keyvault secret show --vault-name romaine-kv --name github-pat --query value -o tsv)
+          echo "::add-mask::$GITHUB_PAT"
+          echo "github_pat=$GITHUB_PAT" >> $GITHUB_OUTPUT
+
+          AUTH0_SECRET=$(az keyvault secret show --vault-name romaine-kv --name auth0-client-secret --query value -o tsv)
+          echo "::add-mask::$AUTH0_SECRET"
+          echo "auth0_secret=$AUTH0_SECRET" >> $GITHUB_OUTPUT
+
+      - name: Initialize OpenTofu
+        working-directory: tofu
+        env:
+          ARM_USE_OIDC: "true"
+          ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+        run: |
+          tofu init \
+            -backend-config="resource_group_name=infra" \
+            -backend-config="storage_account_name=nelsontofu" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=infra-bootstrap.tfstate"
+
+      - name: Plan
+        id: plan
+        working-directory: tofu
+        env:
+          ARM_USE_OIDC: "true"
+          ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_github_pat: ${{ steps.secrets.outputs.github_pat }}
+          TF_VAR_github_owner: nelsong6
+          AUTH0_CLIENT_SECRET: ${{ steps.secrets.outputs.auth0_secret }}
+        run: |
+          set +e
+          tofu plan -detailed-exitcode -out=tfplan 2>&1 | tee plan_output.txt
+          EXIT_CODE=$?
+          set -e
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "### No infrastructure changes detected" >> $GITHUB_STEP_SUMMARY
+          elif [ $EXIT_CODE -eq 2 ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "### Infrastructure changes detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Plan failed"
+            exit 1
+          fi
+
+      - name: Post plan to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('tofu/plan_output.txt', 'utf8');
+            const maxLen = 60000;
+            const truncated = planOutput.length > maxLen
+              ? planOutput.substring(0, maxLen) + '\n\n... (truncated)'
+              : planOutput;
+
+            const body = `### OpenTofu Plan
+            <details>
+            <summary>Click to expand plan output</summary>
+
+            \`\`\`
+            ${truncated}
+            \`\`\`
+            </details>`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('### OpenTofu Plan')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Upload plan artifact
+        if: steps.plan.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tofu/tfplan
+          retention-days: 1
+
+  apply:
+    name: Apply
+    needs: plan
+    if: github.event_name != 'pull_request' && needs.plan.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: '1.9.0'
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARM_CLIENT_ID }}
+          tenant-id: ${{ vars.ARM_TENANT_ID }}
+          subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
+
+      - name: Fetch secrets from Key Vault
+        id: secrets
+        run: |
+          GITHUB_PAT=$(az keyvault secret show --vault-name romaine-kv --name github-pat --query value -o tsv)
+          echo "::add-mask::$GITHUB_PAT"
+          echo "github_pat=$GITHUB_PAT" >> $GITHUB_OUTPUT
+
+          AUTH0_SECRET=$(az keyvault secret show --vault-name romaine-kv --name auth0-client-secret --query value -o tsv)
+          echo "::add-mask::$AUTH0_SECRET"
+          echo "auth0_secret=$AUTH0_SECRET" >> $GITHUB_OUTPUT
+
+      - name: Initialize OpenTofu
+        working-directory: tofu
+        env:
+          ARM_USE_OIDC: "true"
+          ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+        run: |
+          tofu init \
+            -backend-config="resource_group_name=infra" \
+            -backend-config="storage_account_name=nelsontofu" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=infra-bootstrap.tfstate"
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: tofu
+
+      - name: Apply
+        working-directory: tofu
+        env:
+          ARM_USE_OIDC: "true"
+          ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_github_pat: ${{ steps.secrets.outputs.github_pat }}
+          TF_VAR_github_owner: nelsong6
+          AUTH0_CLIENT_SECRET: ${{ steps.secrets.outputs.auth0_secret }}
+        run: |
+          tofu apply tfplan
+          echo "### Apply successful" >> $GITHUB_STEP_SUMMARY
