@@ -19,8 +19,9 @@ resource "auth0_tenant" "main" {
 }
 
 resource "auth0_custom_domain" "main" {
-  domain = "auth.${azurerm_dns_zone.main.name}"
-  type   = "auth0_managed_certs"
+  domain              = "auth.${azurerm_dns_zone.main.name}"
+  type                = "auth0_managed_certs"
+  verification_method = "cname"
 }
 
 resource "auth0_custom_domain_verification" "main" {
