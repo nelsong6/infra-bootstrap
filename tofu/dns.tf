@@ -18,11 +18,6 @@ resource "azurerm_dns_zone" "main" {
 # are managed by each app's repository.
 # ============================================================================
 
-moved {
-  from = azurerm_dns_txt_record.spf
-  to   = azurerm_dns_txt_record.apex
-}
-
 # ============================================================================
 # Email DNS Records (Namecheap Private Email)
 # ============================================================================

@@ -113,42 +113,9 @@ module "app" {
 
   name               = each.key
   has_backend        = each.value.has_backend
-  spacelift_space_id = "root"
   key_vault_name      = data.azurerm_key_vault.main.name
   arm_client_id       = data.azurerm_client_config.current.client_id
   arm_tenant_id       = data.azurerm_client_config.current.tenant_id
   arm_subscription_id = data.azurerm_client_config.current.subscription_id
 }
 
-resource "spacelift_policy" "github_actions_oidc" {
-  name        = "GitHub Actions OIDC Login"
-  description = "Allows GitHub Actions to authenticate via OIDC to read stack outputs"
-  type        = "LOGIN"
-
-  # Attaching it to the same space as your stacks
-  space_id = "root"
-
-  body = <<-EOF
-  package spacelift
-
-  # 1. Grant Read-Only access to the space for any GitHub Action in your personal account.
-  # This is exactly what the kill-me repo needs to run 'spacectl stack output'.
-  space_read[space_id] {
-    space_id := "root"
-    input.session.type == "oidc"
-    input.session.oidc.iss == "https://token.actions.githubusercontent.com"
-    startswith(input.session.oidc.sub, "repo:nelsong6/")
-  }
-
-  # 2. Grant Admin access to the space ONLY for the infra-bootstrap main branch.
-  # This prevents random feature branches or app repos from altering Spacelift configurations.
-  space_admin[space_id] {
-    space_id := "root"
-    input.session.type == "oidc"
-    input.session.oidc.iss == "https://token.actions.githubusercontent.com"
-    input.session.oidc.sub == "repo:nelsong6/infra-bootstrap:ref:refs/heads/main"
-  }
-  EOF
-}
-
-resource "null_resource" "main" {}
