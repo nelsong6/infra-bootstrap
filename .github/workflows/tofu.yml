@@ -81,7 +81,7 @@ jobs:
 
           # Check plan for actual changes using tofu show
           PLAN_JSON=$(tofu show -json tfplan)
-          RESOURCE_CHANGES=$(echo "$PLAN_JSON" | jq '[.resource_changes[]? | select(.change.actions | . != ["no-op"])] | length')
+          RESOURCE_CHANGES=$(echo "$PLAN_JSON" | jq '[.resource_changes[]? | select((.change.actions | . != ["no-op"]) or .change.importing)] | length')
 
           echo "Resource changes detected: $RESOURCE_CHANGES"
           if [ "$RESOURCE_CHANGES" -gt 0 ]; then
