@@ -181,11 +181,6 @@ import {
 }
 
 import {
-  to = azurerm_static_web_app_custom_domain.landing
-  id = "/subscriptions/${local._sub}/resourceGroups/landing-page-rg/providers/Microsoft.Web/staticSites/landing-page-app/customDomains/romaine.life"
-}
-
-import {
   to = github_repository.landing_page
   id = "landing-page"
 }
