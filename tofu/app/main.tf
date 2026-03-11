@@ -227,3 +227,17 @@ resource "azuread_application_federated_identity_credential" "github_actions_pro
   subject        = "repo:${github_repository.repo.full_name}:environment:prod"
 }
 
+resource "azuread_application_federated_identity_credential" "github_actions_pr" {
+  application_id = data.azuread_application.global.id
+  display_name   = "${var.name}-github-actions-pr"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://token.actions.githubusercontent.com"
+  subject        = "repo:${github_repository.repo.full_name}:pull_request"
+}
+
+resource "github_actions_variable" "tfstate_storage_account" {
+  repository    = github_repository.repo.name
+  variable_name = "TFSTATE_STORAGE_ACCOUNT"
+  value         = "nelsontofu"
+}
+

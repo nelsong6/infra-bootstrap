@@ -1,3 +1,13 @@
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "infra"
+    storage_account_name = "nelsontofu"
+    container_name       = "tfstate"
+    key                  = "infra-bootstrap.tfstate"
+    use_oidc             = true
+  }
+}
+
 provider "azurerm" {
   features {}
   use_oidc = true
