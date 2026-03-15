@@ -43,6 +43,10 @@ variable "google_client_id" {
   type = string
 }
 
+variable "microsoft_client_id" {
+  type = string
+}
+
 resource "github_repository" "repo" {
   name       = var.name
   visibility = "public"
@@ -139,4 +143,10 @@ resource "github_actions_variable" "google_client_id" {
   repository    = github_repository.repo.name
   variable_name = "GOOGLE_CLIENT_ID"
   value         = var.google_client_id
+}
+
+resource "github_actions_variable" "microsoft_client_id" {
+  repository    = github_repository.repo.name
+  variable_name = "MICROSOFT_CLIENT_ID"
+  value         = var.microsoft_client_id
 }

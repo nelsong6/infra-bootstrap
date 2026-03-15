@@ -27,6 +27,14 @@ resource "azuread_application" "microsoft_login" {
       # kill-me — add redirect URIs here when ready
     ]
   }
+
+  single_page_application {
+    redirect_uris = [
+      # plant-agent (MSAL.js popup flow)
+      "https://plants.romaine.life",
+      "http://localhost:5173",
+    ]
+  }
 }
 
 resource "azuread_application_password" "microsoft_login" {
@@ -90,6 +98,12 @@ resource "azurerm_app_configuration_key" "google_oauth_client_id_plain" {
   configuration_store_id = azurerm_app_configuration.main.id
   key                    = "google_oauth_client_id_plain"
   value                  = data.azurerm_key_vault_secret.google_oauth_client_id.value
+}
+
+resource "azurerm_app_configuration_key" "microsoft_oauth_client_id_plain" {
+  configuration_store_id = azurerm_app_configuration.main.id
+  key                    = "microsoft_oauth_client_id_plain"
+  value                  = azuread_application.microsoft_login.client_id
 }
 
 resource "azurerm_app_configuration_key" "microsoft_oauth_client_id" {
