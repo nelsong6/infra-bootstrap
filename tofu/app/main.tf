@@ -27,6 +27,10 @@ variable "key_vault_id" {
   type = string
 }
 
+variable "app_config_id" {
+  type = string
+}
+
 variable "arm_tenant_id" {
   type = string
 }
@@ -64,6 +68,12 @@ resource "azurerm_role_assignment" "contributor" {
 resource "azurerm_role_assignment" "keyvault_secrets_user" {
   scope                = var.key_vault_id
   role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_service_principal.app.object_id
+}
+
+resource "azurerm_role_assignment" "appconfig_data_owner" {
+  scope                = var.app_config_id
+  role_definition_name = "App Configuration Data Owner"
   principal_id         = azuread_service_principal.app.object_id
 }
 

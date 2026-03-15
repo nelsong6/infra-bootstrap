@@ -115,6 +115,7 @@ module "app" {
   name                = each.key
   key_vault_name      = data.azurerm_key_vault.main.name
   key_vault_id        = data.azurerm_key_vault.main.id
+  app_config_id       = azurerm_app_configuration.main.id
   arm_tenant_id       = data.azurerm_client_config.current.tenant_id
   arm_subscription_id = data.azurerm_client_config.current.subscription_id
 }
