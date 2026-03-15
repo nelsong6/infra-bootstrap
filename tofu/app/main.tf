@@ -8,6 +8,10 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~> 3.0"
     }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
   }
 }
 
@@ -19,7 +23,7 @@ variable "key_vault_name" {
   type = string
 }
 
-variable "arm_client_id" {
+variable "key_vault_id" {
   type = string
 }
 
@@ -42,6 +46,27 @@ resource "github_repository" "repo" {
   delete_branch_on_merge = true
 }
 
+# Per-app Azure AD application + service principal
+resource "azuread_application" "app" {
+  display_name = var.name
+}
+
+resource "azuread_service_principal" "app" {
+  client_id = azuread_application.app.client_id
+}
+
+resource "azurerm_role_assignment" "contributor" {
+  scope                = "/subscriptions/${var.arm_subscription_id}"
+  role_definition_name = "Contributor"
+  principal_id         = azuread_service_principal.app.object_id
+}
+
+resource "azurerm_role_assignment" "keyvault_secrets_user" {
+  scope                = var.key_vault_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_service_principal.app.object_id
+}
+
 resource "github_actions_variable" "key_vault_name" {
   repository    = github_repository.repo.name
   variable_name = "KEY_VAULT_NAME"
@@ -51,7 +76,7 @@ resource "github_actions_variable" "key_vault_name" {
 resource "github_actions_variable" "arm_client_id" {
   repository    = github_repository.repo.name
   variable_name = "ARM_CLIENT_ID"
-  value         = var.arm_client_id
+  value         = azuread_application.app.client_id
 }
 
 resource "github_actions_variable" "arm_tenant_id" {
@@ -66,12 +91,8 @@ resource "github_actions_variable" "arm_subscription_id" {
   value         = var.arm_subscription_id
 }
 
-data "azuread_application" "global" {
-  client_id = var.arm_client_id
-}
-
 resource "azuread_application_federated_identity_credential" "github_actions_main" {
-  application_id = data.azuread_application.global.id
+  application_id = azuread_application.app.id
   display_name   = "${var.name}-github-actions-main"
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://token.actions.githubusercontent.com"
@@ -79,7 +100,7 @@ resource "azuread_application_federated_identity_credential" "github_actions_mai
 }
 
 resource "azuread_application_federated_identity_credential" "github_actions_prod" {
-  application_id = data.azuread_application.global.id
+  application_id = azuread_application.app.id
   display_name   = "${var.name}-github-actions-prod"
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://token.actions.githubusercontent.com"
@@ -87,7 +108,7 @@ resource "azuread_application_federated_identity_credential" "github_actions_pro
 }
 
 resource "azuread_application_federated_identity_credential" "github_actions_pr" {
-  application_id = data.azuread_application.global.id
+  application_id = azuread_application.app.id
   display_name   = "${var.name}-github-actions-pr"
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://token.actions.githubusercontent.com"

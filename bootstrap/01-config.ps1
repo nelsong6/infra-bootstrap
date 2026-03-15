@@ -25,8 +25,7 @@ $_cfg = _ParseIniConfig $_localConfigPath
 # Validate required keys (github.repo is optional — inferred from git if absent)
 $_required = @(
     "azure.subscription_id",
-    "azure.application_id",
-    "spacelift.hostname"
+    "azure.application_id"
 )
 $_missing = $_required | Where-Object { -not $_cfg.ContainsKey($_) -or $_cfg[$_] -eq "" }
 if ($_missing) {
@@ -38,7 +37,6 @@ if ($_missing) {
 # ------------------------------------------------------------------
 $script:SUBSCRIPTION_ID    = $_cfg["azure.subscription_id"]
 $script:APP_ID             = $_cfg["azure.application_id"]
-$script:SPACELIFT_HOSTNAME = $_cfg["spacelift.hostname"]
 
 # Resolve GitHub repo — prefer local.config override, otherwise infer from git remote
 if ($_cfg["github.repo"] -and $_cfg["github.repo"] -ne "") {
@@ -57,8 +55,6 @@ if ($_cfg["github.repo"] -and $_cfg["github.repo"] -ne "") {
         throw "Could not parse owner/repo from remote URL: $_remoteUrl`nSet github.repo manually in local.config."
     }
 }
-$script:SPACELIFT_SPACE_ID = if ($_cfg["spacelift.space_id"]) { $_cfg["spacelift.space_id"] } else { "root" }
-
 # ------------------------------------------------------------------
 # Static / derived values (safe to commit)
 # ------------------------------------------------------------------
@@ -67,7 +63,7 @@ $script:STORAGE_NAME    = "tfstate" + (Get-Random -Minimum 1000 -Maximum 9999)
 $script:CONTAINER_NAME  = "tfstate"
 $script:TARGET_FILE     = "tofu/backend.tf"
 
-# Folder name used for deriving Key Vault name and Spacelift stack slug
+# Folder name used for deriving Key Vault name
 $_folderName = Split-Path -Leaf (Get-Location)
 
 # Key Vault name — prefer local.config, otherwise derive from folder name (max 24 chars, must start with a letter)
@@ -79,10 +75,5 @@ if ($_cfg["azure.keyvault_name"] -and $_cfg["azure.keyvault_name"] -ne "") {
     if ($_kvName.Length -gt 24)      { $_kvName = $_kvName.Substring(0, 24).TrimEnd('-') }
     $script:KEYVAULT_NAME = $_kvName
 }
-
-# Spacelift stack slug — same rules as KV name (no length cap)
-$_stackSlug = ($_folderName.ToLower() -replace '[^a-z0-9]', '-') -replace '-+', '-' -replace '^-|-$', ''
-if ($_stackSlug -notmatch '^[a-z]') { $_stackSlug = "stack-" + $_stackSlug }
-$script:SPACELIFT_STACK_SLUG = $_stackSlug
 
 Write-Host "Configuration loaded" -ForegroundColor Gray

@@ -50,10 +50,7 @@ resource "azurerm_static_web_app_custom_domain" "landing" {
 # ============================================================================
 # GitHub Repository & CI/CD Configuration
 # ============================================================================
-# The landing-page repo has no Spacelift stack. Deploys flow through
-# infra-bootstrap: push → trigger-infra workflow → Spacelift apply →
-# after_apply hook dispatches landing-page deploy workflow.
-# The after_apply hook is configured on the infra-bootstrap Spacelift stack.
+# CI/CD runs via GitHub Actions (reusable workflows from pipeline-templates).
 
 resource "github_repository" "landing_page" {
   name       = "landing-page"

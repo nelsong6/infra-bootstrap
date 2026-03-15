@@ -4,7 +4,6 @@
 
 [azure]
 subscription_id = 00000000-0000-0000-0000-000000000000
-# application_id of the enterprise app created by Spacelift (copied from Spacelift → Azure integration)
 application_id  = 00000000-0000-0000-0000-000000000000
 # keyvault_name is optional — derived from the folder name if not set.
 # Uncomment and set manually only if you need to override it.
@@ -17,7 +16,3 @@ application_id  = 00000000-0000-0000-0000-000000000000
 
 [google]
 project_id = my-gcp-project-id
-
-[spacelift]
-hostname  = myorg.app.spacelift.io
-space_id  = root
