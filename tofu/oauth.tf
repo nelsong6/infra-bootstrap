@@ -31,8 +31,8 @@ resource "azuread_application" "microsoft_login" {
   single_page_application {
     redirect_uris = [
       # plant-agent (MSAL.js popup flow)
-      "https://plants.romaine.life",
-      "http://localhost:5173",
+      "https://plants.romaine.life/",
+      "http://localhost:5173/",
     ]
   }
 }
