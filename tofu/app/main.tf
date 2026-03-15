@@ -65,9 +65,9 @@ resource "azurerm_role_assignment" "contributor" {
   principal_id         = azuread_service_principal.app.object_id
 }
 
-resource "azurerm_role_assignment" "keyvault_secrets_user" {
+resource "azurerm_role_assignment" "keyvault_secrets_officer" {
   scope                = var.key_vault_id
-  role_definition_name = "Key Vault Secrets User"
+  role_definition_name = "Key Vault Secrets Officer"
   principal_id         = azuread_service_principal.app.object_id
 }
 

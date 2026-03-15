@@ -102,6 +102,49 @@ resource "azurerm_app_configuration_key" "auth0_audience" {
   value                  = "https://api.${azurerm_dns_zone.main.name}" # The identifier you used in backend.tf
 }
 
+# ============================================================================
+# Shared User-Assigned Managed Identity
+# ============================================================================
+# Pre-configured identity that apps attach to their Container Apps.
+# Common roles are assigned here so app SPs don't need User Access
+# Administrator to create role assignments at deploy time.
+
+resource "azurerm_user_assigned_identity" "shared" {
+  name                = "infra-shared-identity"
+  resource_group_name = data.azurerm_resource_group.main.name
+  location            = data.azurerm_resource_group.main.location
+}
+
+# Cosmos DB Built-in Data Contributor
+resource "azurerm_cosmosdb_sql_role_assignment" "shared_identity_cosmos" {
+  resource_group_name = data.azurerm_resource_group.main.name
+  account_name        = azurerm_cosmosdb_account.main.name
+  role_definition_id  = "${azurerm_cosmosdb_account.main.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
+  principal_id        = azurerm_user_assigned_identity.shared.principal_id
+  scope               = azurerm_cosmosdb_account.main.id
+}
+
+# App Configuration Data Reader
+resource "azurerm_role_assignment" "shared_identity_appconfig" {
+  scope                = azurerm_app_configuration.main.id
+  role_definition_name = "App Configuration Data Reader"
+  principal_id         = azurerm_user_assigned_identity.shared.principal_id
+}
+
+# Key Vault Secrets User
+resource "azurerm_role_assignment" "shared_identity_keyvault" {
+  scope                = data.azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.shared.principal_id
+}
+
+# Storage Blob Data Contributor (subscription scope — covers any app's storage)
+resource "azurerm_role_assignment" "shared_identity_storage" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_user_assigned_identity.shared.principal_id
+}
+
 module "app" {
   source   = "./app"
   for_each = toset([
