@@ -82,6 +82,12 @@ resource "azurerm_role_assignment" "appconfig_data_owner" {
   principal_id         = azuread_service_principal.app.object_id
 }
 
+resource "azurerm_role_assignment" "storage_blob_reader" {
+  scope                = "/subscriptions/${var.arm_subscription_id}"
+  role_definition_name = "Storage Blob Data Reader"
+  principal_id         = azuread_service_principal.app.object_id
+}
+
 # Grant SP permission to manage its own Azure AD app registration (e.g. redirect URIs).
 # Application.ReadWrite.OwnedBy app role from Microsoft Graph.
 data "azuread_service_principal" "msgraph" {
