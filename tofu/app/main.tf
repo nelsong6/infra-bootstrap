@@ -31,12 +31,6 @@ variable "arm_subscription_id" {
   type = string
 }
 
-variable "has_backend" {
-  description = "Whether the app has a backend (Container App + Cosmos DB + App Configuration)"
-  type        = bool
-  default     = true
-}
-
 resource "github_repository" "repo" {
   name       = var.name
   visibility = "public"
