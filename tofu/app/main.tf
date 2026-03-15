@@ -43,9 +43,6 @@ variable "google_client_id" {
   type = string
 }
 
-variable "microsoft_client_id" {
-  type = string
-}
 
 resource "github_repository" "repo" {
   name       = var.name
@@ -83,6 +80,18 @@ resource "azurerm_role_assignment" "appconfig_data_owner" {
   scope                = var.app_config_id
   role_definition_name = "App Configuration Data Owner"
   principal_id         = azuread_service_principal.app.object_id
+}
+
+# Grant SP permission to manage its own Azure AD app registration (e.g. redirect URIs).
+# Application.ReadWrite.OwnedBy app role from Microsoft Graph.
+data "azuread_service_principal" "msgraph" {
+  client_id = "00000003-0000-0000-c000-000000000000"
+}
+
+resource "azuread_app_role_assignment" "app_readwrite_owned" {
+  app_role_id         = "18a4783c-866b-4cc7-a460-3d5e5662c884"
+  principal_object_id = azuread_service_principal.app.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
 resource "github_actions_variable" "key_vault_name" {
@@ -145,8 +154,3 @@ resource "github_actions_variable" "google_client_id" {
   value         = var.google_client_id
 }
 
-resource "github_actions_variable" "microsoft_client_id" {
-  repository    = github_repository.repo.name
-  variable_name = "MICROSOFT_CLIENT_ID"
-  value         = var.microsoft_client_id
-}

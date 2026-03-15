@@ -162,6 +162,5 @@ module "app" {
   arm_tenant_id       = data.azurerm_client_config.current.tenant_id
   arm_subscription_id = data.azurerm_client_config.current.subscription_id
   google_client_id    = data.azurerm_key_vault_secret.google_oauth_client_id.value
-  microsoft_client_id = azuread_application.microsoft_login.client_id
 }
 
