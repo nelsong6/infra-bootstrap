@@ -10,7 +10,7 @@ Root infrastructure repo. Creates shared resources consumed by all app repos.
 
 ## App Onboarding
 
-The app module (`tofu/app/main.tf`) creates per-app: GitHub repo, Azure AD app registration + service principal (with Contributor, Key Vault Secrets Officer, and App Configuration Data Owner roles), OIDC federated credentials, and GitHub Actions variables.
+The app module (`tofu/app/main.tf`) creates per-app: GitHub repo, Azure AD app registration + service principal (with Contributor, Key Vault Secrets Officer, and App Configuration Data Owner roles), OIDC federated credentials, and GitHub Actions variables (`ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID`, `KEY_VAULT_NAME`, `TFSTATE_STORAGE_ACCOUNT`, `GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID`).
 Apps are added to the `for_each` list in the app module.
 
 ## Infrastructure Pattern
@@ -33,3 +33,4 @@ Apps are added to the `for_each` list in the app module.
 - **2026-03-14** — Per-app Azure AD app registrations: each app now gets its own `azuread_application` + `azuread_service_principal` with Contributor (subscription) and Key Vault Secrets User roles, replacing the shared global app registration that was hitting the 20 federated credential limit
 - **2026-03-14** — Grant App Configuration Data Owner role to app SPs (needed for data-plane writes during tofu apply)
 - **2026-03-14** — Add shared user-assigned managed identity (`infra-shared-identity`) with pre-assigned roles: Cosmos DB Data Contributor, App Config Data Reader, Key Vault Secrets User, Storage Blob Data Contributor (subscription scope). Apps attach this identity to Container Apps instead of creating their own role assignments. Upgrade app SP Key Vault role from Secrets User to Secrets Officer (for writing secrets during apply)
+- **2026-03-15** — Distribute Google and Microsoft OAuth client IDs as GitHub Actions variables (`GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID`) to all app repos via the app module. Added plain (non-KV-reference) App Config keys for both (`google_oauth_client_id_plain`, `microsoft_oauth_client_id_plain`) so backends can read client IDs without Key Vault access. Added SPA redirect URIs to Microsoft OAuth app registration for plant-agent's MSAL.js redirect flow (`plants.romaine.life`, `localhost:5173`)
