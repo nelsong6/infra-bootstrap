@@ -86,6 +86,12 @@ resource "azurerm_app_configuration_key" "google_oauth_client_secret" {
   vault_key_reference    = data.azurerm_key_vault_secret.google_oauth_client_secret.versionless_id
 }
 
+resource "azurerm_app_configuration_key" "google_oauth_client_id_plain" {
+  configuration_store_id = azurerm_app_configuration.main.id
+  key                    = "google_oauth_client_id_plain"
+  value                  = data.azurerm_key_vault_secret.google_oauth_client_id.value
+}
+
 resource "azurerm_app_configuration_key" "microsoft_oauth_client_id" {
   configuration_store_id = azurerm_app_configuration.main.id
   key                    = "microsoft_oauth_client_id"
