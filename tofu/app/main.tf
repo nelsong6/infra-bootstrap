@@ -31,6 +31,18 @@ variable "app_config_id" {
   type = string
 }
 
+variable "cosmos_account_id" {
+  type = string
+}
+
+variable "cosmos_account_name" {
+  type = string
+}
+
+variable "cosmos_resource_group_name" {
+  type = string
+}
+
 variable "arm_tenant_id" {
   type = string
 }
@@ -86,6 +98,15 @@ resource "azurerm_role_assignment" "storage_blob_reader" {
   scope                = "/subscriptions/${var.arm_subscription_id}"
   role_definition_name = "Storage Blob Data Reader"
   principal_id         = azuread_service_principal.app.object_id
+}
+
+# Cosmos DB Built-in Data Reader — allows snapshot generation in CI
+resource "azurerm_cosmosdb_sql_role_assignment" "cosmos_data_reader" {
+  resource_group_name = var.cosmos_resource_group_name
+  account_name        = var.cosmos_account_name
+  role_definition_id  = "${var.cosmos_account_id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000001"
+  principal_id        = azuread_service_principal.app.object_id
+  scope               = var.cosmos_account_id
 }
 
 # Grant SP permission to manage its own Azure AD app registration (e.g. redirect URIs).
