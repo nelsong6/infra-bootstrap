@@ -7,3 +7,5 @@ Bootstrap for setting up some cheap/free app services in Azure.
 Auth0 - google sso
 github - username/pass
 claude - google sso
+openai - google sso
+replicate - google sso
