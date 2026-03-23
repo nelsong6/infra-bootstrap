@@ -148,6 +148,7 @@ resource "azurerm_role_assignment" "shared_identity_storage" {
 module "app" {
   source   = "./app"
   for_each = toset([
+    "api",
     "bender-world",
     "eight-queens",
     "kill-me",

@@ -22,6 +22,7 @@ Apps are added to the `for_each` list in the app module.
 ## Related Repos
 
 - **infra-bootstrap** (this repo) — root infrastructure
+- **api** — shared always-on backend consolidating all app backends into a single Container App
 - **my-homepage**, **kill-me**, **bender-world**, **eight-queens**, **plant-agent** — app repos that consume shared infra
 - **pipeline-templates** — reusable GitHub Actions workflows
 
@@ -33,4 +34,5 @@ Apps are added to the `for_each` list in the app module.
 - **2026-03-14** — Per-app Azure AD app registrations: each app now gets its own `azuread_application` + `azuread_service_principal` with Contributor (subscription) and Key Vault Secrets User roles, replacing the shared global app registration that was hitting the 20 federated credential limit
 - **2026-03-14** — Grant App Configuration Data Owner role to app SPs (needed for data-plane writes during tofu apply)
 - **2026-03-14** — Add shared user-assigned managed identity (`infra-shared-identity`) with pre-assigned roles: Cosmos DB Data Contributor, App Config Data Reader, Key Vault Secrets User, Storage Blob Data Contributor (subscription scope). Apps attach this identity to Container Apps instead of creating their own role assignments. Upgrade app SP Key Vault role from Secrets User to Secrets Officer (for writing secrets during apply)
+- **2026-03-22** — Added `api` to the app module `for_each` list — scaffolds the shared always-on backend repo (Azure AD app registration, OIDC credentials, GitHub Actions variables). Part of consolidating all app backends into a single Container App to eliminate cold starts (~$19/month for always-on 0.25 vCPU / 0.5 Gi).
 - **2026-03-15** — Distribute Google and Microsoft OAuth client IDs as GitHub Actions variables (`GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID`) to all app repos via the app module. Added plain (non-KV-reference) App Config keys for both (`google_oauth_client_id_plain`, `microsoft_oauth_client_id_plain`) so backends can read client IDs without Key Vault access. Added SPA redirect URIs to Microsoft OAuth app registration for plant-agent's MSAL.js redirect flow (`plants.romaine.life`, `localhost:5173`)
