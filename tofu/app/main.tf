@@ -83,7 +83,7 @@ resource "azurerm_role_assignment" "contributor" {
 }
 
 resource "azurerm_role_assignment" "rbac_admin" {
-  scope                = "/subscriptions/${var.arm_subscription_id}/resourceGroups/infra"
+  scope                = "/subscriptions/${var.arm_subscription_id}"
   role_definition_name = "Role Based Access Control Administrator"
   principal_id         = azuread_service_principal.app.object_id
 }
