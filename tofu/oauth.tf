@@ -20,10 +20,9 @@ resource "azuread_application" "microsoft_login" {
 
   web {
     redirect_uris = [
-      # my-homepage (direct passport-microsoft)
-      "https://homepage.api.romaine.life/auth/microsoft/callback",
-      "https://homepage-api.${azurerm_container_app_environment.main.default_domain}/auth/microsoft/callback",
-      "http://localhost:3000/auth/microsoft/callback",
+      # my-homepage (shared API at api.romaine.life/homepage)
+      "https://api.romaine.life/homepage/auth/microsoft/callback",
+      "http://localhost:3000/homepage/auth/microsoft/callback",
       # kill-me — add redirect URIs here when ready
     ]
   }

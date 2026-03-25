@@ -67,8 +67,8 @@ $manifest = @{
     name           = "romaine-life-login"
     url            = "https://romaine.life"
     callback_urls  = @(
-        "https://homepage.api.romaine.life/auth/github/callback",
-        "http://localhost:3000/auth/github/callback"
+        "https://api.romaine.life/homepage/auth/github/callback",
+        "http://localhost:3000/homepage/auth/github/callback"
     )
     redirect_url   = $callbackUrl
     public         = $false
