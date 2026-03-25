@@ -22,6 +22,7 @@ resource "azuread_application" "microsoft_login" {
     redirect_uris = [
       # my-homepage (shared API at api.romaine.life/homepage)
       "https://api.romaine.life/homepage/auth/microsoft/callback",
+      "https://shared-api.${azurerm_container_app_environment.main.default_domain}/homepage/auth/microsoft/callback",
       "http://localhost:3000/homepage/auth/microsoft/callback",
       # kill-me — add redirect URIs here when ready
     ]
