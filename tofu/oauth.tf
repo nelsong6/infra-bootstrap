@@ -18,21 +18,19 @@ resource "azuread_application" "microsoft_login" {
     requested_access_token_version = 2
   }
 
-  web {
-    redirect_uris = [
-      # my-homepage (shared API at api.romaine.life/homepage)
-      "https://api.romaine.life/homepage/auth/microsoft/callback",
-      "https://shared-api.${azurerm_container_app_environment.main.default_domain}/homepage/auth/microsoft/callback",
-      "http://localhost:3000/homepage/auth/microsoft/callback",
-      # kill-me — add redirect URIs here when ready
-    ]
-  }
-
   single_page_application {
     redirect_uris = [
-      # plant-agent (MSAL.js popup flow)
+      # Custom domains
+      "https://homepage.romaine.life/",
+      "https://workout.romaine.life/",
       "https://plants.romaine.life/",
+      # SWA bypass URLs (auto-generated, stable)
+      "https://black-sky-0e0d2b71e.4.azurestaticapps.net/",  # homepage
+      "https://nice-sea-09c30861e.2.azurestaticapps.net/",    # workout
+      "https://lemon-island-070f8051e.2.azurestaticapps.net/", # plant-agent
+      # Local dev
       "http://localhost:5173/",
+      "http://localhost:5500/",
     ]
   }
 }
