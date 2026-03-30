@@ -153,6 +153,7 @@ module "app" {
     "eight-queens",
     "investing",
     "kill-me",
+    "lights",
     "my-homepage",
     "plant-agent",
   ])
