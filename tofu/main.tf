@@ -151,6 +151,7 @@ module "app" {
     "api",
     "bender-world",
     "eight-queens",
+    "investing",
     "kill-me",
     "my-homepage",
     "plant-agent",
