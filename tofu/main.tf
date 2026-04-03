@@ -151,6 +151,7 @@ module "app" {
     "api",
     "bender-world",
     "eight-queens",
+    "infra-diagram",
     "investing",
     "kill-me",
     "lights",
