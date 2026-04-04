@@ -146,15 +146,29 @@ resource "azurerm_role_assignment" "shared_identity_storage" {
 }
 
 locals {
-  ci_only_apps = toset(["fuzzy-tiered"])
+  ci_only_apps = toset(["fzt"])
   app_default_branch = {
-    "fuzzy-tiered" = "master"
+    "fzt" = "master"
+  }
+  app_topics = {
+    "fzt-showcase" = ["fzt-downstream"]
+    "my-homepage"  = ["fzt-downstream"]
   }
 }
 
 import {
-  to = module.app["fuzzy-tiered"].github_repository.repo
-  id = "fuzzy-tiered"
+  to = module.app["fzt"].github_repository.repo
+  id = "fzt"
+}
+
+moved {
+  from = module.app["fuzzy-tiered"]
+  to   = module.app["fzt"]
+}
+
+moved {
+  from = module.app["fuzzy-tiers-showcase"]
+  to   = module.app["fzt-showcase"]
 }
 
 module "app" {
@@ -163,8 +177,8 @@ module "app" {
     "api",
     "bender-world",
     "eight-queens",
-    "fuzzy-tiered",
-    "fuzzy-tiers-showcase",
+    "fzt",
+    "fzt-showcase",
     "infra-diagram",
     "investing",
     "kill-me",
@@ -176,6 +190,7 @@ module "app" {
   name                       = each.key
   ci_only                    = contains(local.ci_only_apps, each.key)
   default_branch             = lookup(local.app_default_branch, each.key, "main")
+  topics                     = lookup(local.app_topics, each.key, [])
   key_vault_name             = data.azurerm_key_vault.main.name
   key_vault_id               = data.azurerm_key_vault.main.id
   app_config_id              = azurerm_app_configuration.main.id
