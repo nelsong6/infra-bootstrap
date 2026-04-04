@@ -15,6 +15,8 @@ terraform {
   }
 }
 
+# ── Core variables (all apps) ───────────────────────────────────────
+
 variable "name" {
   type = string
 }
@@ -27,22 +29,6 @@ variable "key_vault_id" {
   type = string
 }
 
-variable "app_config_id" {
-  type = string
-}
-
-variable "cosmos_account_id" {
-  type = string
-}
-
-variable "cosmos_account_name" {
-  type = string
-}
-
-variable "cosmos_resource_group_name" {
-  type = string
-}
-
 variable "arm_tenant_id" {
   type = string
 }
@@ -51,10 +37,45 @@ variable "arm_subscription_id" {
   type = string
 }
 
-variable "google_client_id" {
-  type = string
+variable "default_branch" {
+  type    = string
+  default = "main"
 }
 
+variable "ci_only" {
+  description = "When true, only create OIDC identity + KV read access (no web app roles)."
+  type        = bool
+  default     = false
+}
+
+# ── Web-only variables (ignored when ci_only = true) ────────────────
+
+variable "app_config_id" {
+  type    = string
+  default = ""
+}
+
+variable "cosmos_account_id" {
+  type    = string
+  default = ""
+}
+
+variable "cosmos_account_name" {
+  type    = string
+  default = ""
+}
+
+variable "cosmos_resource_group_name" {
+  type    = string
+  default = ""
+}
+
+variable "google_client_id" {
+  type    = string
+  default = ""
+}
+
+# ── Core resources (all apps) ──────────────────────────────────────
 
 resource "github_repository" "repo" {
   name       = var.name
@@ -76,55 +97,29 @@ resource "azuread_service_principal" "app" {
   client_id = azuread_application.app.client_id
 }
 
-resource "azurerm_role_assignment" "contributor" {
-  scope                = "/subscriptions/${var.arm_subscription_id}"
-  role_definition_name = "Contributor"
-  principal_id         = azuread_service_principal.app.object_id
-}
-
-resource "azurerm_role_assignment" "rbac_admin" {
-  scope                = "/subscriptions/${var.arm_subscription_id}"
-  role_definition_name = "Role Based Access Control Administrator"
-  principal_id         = azuread_service_principal.app.object_id
-}
-
-resource "azurerm_role_assignment" "keyvault_secrets_officer" {
+# Key Vault Secrets User (read-only) — ci_only apps get this instead of Officer
+resource "azurerm_role_assignment" "keyvault_secrets_user" {
+  count                = var.ci_only ? 1 : 0
   scope                = var.key_vault_id
-  role_definition_name = "Key Vault Secrets Officer"
+  role_definition_name = "Key Vault Secrets User"
   principal_id         = azuread_service_principal.app.object_id
 }
 
-resource "azurerm_role_assignment" "appconfig_data_owner" {
-  scope                = var.app_config_id
-  role_definition_name = "App Configuration Data Owner"
-  principal_id         = azuread_service_principal.app.object_id
+# OIDC federated credentials — default branch + pull requests
+resource "azuread_application_federated_identity_credential" "github_actions_main" {
+  application_id = azuread_application.app.id
+  display_name   = "${var.name}-github-actions-${var.default_branch}"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://token.actions.githubusercontent.com"
+  subject        = "repo:${github_repository.repo.full_name}:ref:refs/heads/${var.default_branch}"
 }
 
-resource "azurerm_role_assignment" "storage_blob_reader" {
-  scope                = "/subscriptions/${var.arm_subscription_id}"
-  role_definition_name = "Storage Blob Data Reader"
-  principal_id         = azuread_service_principal.app.object_id
-}
-
-# Cosmos DB Built-in Data Reader — allows snapshot generation in CI
-resource "azurerm_cosmosdb_sql_role_assignment" "cosmos_data_reader" {
-  resource_group_name = var.cosmos_resource_group_name
-  account_name        = var.cosmos_account_name
-  role_definition_id  = "${var.cosmos_account_id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000001"
-  principal_id        = azuread_service_principal.app.object_id
-  scope               = var.cosmos_account_id
-}
-
-# Grant SP permission to manage its own Azure AD app registration (e.g. redirect URIs).
-# Application.ReadWrite.OwnedBy app role from Microsoft Graph.
-data "azuread_service_principal" "msgraph" {
-  client_id = "00000003-0000-0000-c000-000000000000"
-}
-
-resource "azuread_app_role_assignment" "app_readwrite_owned" {
-  app_role_id         = "18a4783c-866b-4cc7-a460-3d5e5662c884"
-  principal_object_id = azuread_service_principal.app.object_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+resource "azuread_application_federated_identity_credential" "github_actions_pr" {
+  application_id = azuread_application.app.id
+  display_name   = "${var.name}-github-actions-pr"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://token.actions.githubusercontent.com"
+  subject        = "repo:${github_repository.repo.full_name}:pull_request"
 }
 
 resource "github_actions_variable" "key_vault_name" {
@@ -151,39 +146,20 @@ resource "github_actions_variable" "arm_subscription_id" {
   value         = var.arm_subscription_id
 }
 
-resource "azuread_application_federated_identity_credential" "github_actions_main" {
-  application_id = azuread_application.app.id
-  display_name   = "${var.name}-github-actions-main"
-  audiences      = ["api://AzureADTokenExchange"]
-  issuer         = "https://token.actions.githubusercontent.com"
-  subject        = "repo:${github_repository.repo.full_name}:ref:refs/heads/main"
-}
+# ── Web app resources (skipped when ci_only = true) ────────────────
 
-resource "azuread_application_federated_identity_credential" "github_actions_prod" {
-  application_id = azuread_application.app.id
-  display_name   = "${var.name}-github-actions-prod"
-  audiences      = ["api://AzureADTokenExchange"]
-  issuer         = "https://token.actions.githubusercontent.com"
-  subject        = "repo:${github_repository.repo.full_name}:environment:prod"
-}
+module "web" {
+  source   = "./web"
+  count    = var.ci_only ? 0 : 1
 
-resource "azuread_application_federated_identity_credential" "github_actions_pr" {
-  application_id = azuread_application.app.id
-  display_name   = "${var.name}-github-actions-pr"
-  audiences      = ["api://AzureADTokenExchange"]
-  issuer         = "https://token.actions.githubusercontent.com"
-  subject        = "repo:${github_repository.repo.full_name}:pull_request"
+  repo_name              = var.name
+  principal_id           = azuread_service_principal.app.object_id
+  application_id         = azuread_application.app.id
+  arm_subscription_id    = var.arm_subscription_id
+  key_vault_id           = var.key_vault_id
+  app_config_id          = var.app_config_id
+  cosmos_account_id      = var.cosmos_account_id
+  cosmos_account_name    = var.cosmos_account_name
+  cosmos_resource_group_name = var.cosmos_resource_group_name
+  google_client_id       = var.google_client_id
 }
-
-resource "github_actions_variable" "tfstate_storage_account" {
-  repository    = github_repository.repo.name
-  variable_name = "TFSTATE_STORAGE_ACCOUNT"
-  value         = "nelsontofu"
-}
-
-resource "github_actions_variable" "google_client_id" {
-  repository    = github_repository.repo.name
-  variable_name = "GOOGLE_CLIENT_ID"
-  value         = var.google_client_id
-}
-

@@ -145,12 +145,20 @@ resource "azurerm_role_assignment" "shared_identity_storage" {
   principal_id         = azurerm_user_assigned_identity.shared.principal_id
 }
 
+locals {
+  ci_only_apps = toset(["fuzzy-tiered"])
+  app_default_branch = {
+    "fuzzy-tiered" = "master"
+  }
+}
+
 module "app" {
   source   = "./app"
   for_each = toset([
     "api",
     "bender-world",
     "eight-queens",
+    "fuzzy-tiered",
     "fuzzy-tiers-showcase",
     "infra-diagram",
     "investing",
@@ -160,15 +168,17 @@ module "app" {
     "plant-agent",
   ])
 
-  name                    = each.key
-  key_vault_name          = data.azurerm_key_vault.main.name
-  key_vault_id            = data.azurerm_key_vault.main.id
-  app_config_id           = azurerm_app_configuration.main.id
-  cosmos_account_id       = azurerm_cosmosdb_account.main.id
-  cosmos_account_name     = azurerm_cosmosdb_account.main.name
+  name                       = each.key
+  ci_only                    = contains(local.ci_only_apps, each.key)
+  default_branch             = lookup(local.app_default_branch, each.key, "main")
+  key_vault_name             = data.azurerm_key_vault.main.name
+  key_vault_id               = data.azurerm_key_vault.main.id
+  app_config_id              = azurerm_app_configuration.main.id
+  cosmos_account_id          = azurerm_cosmosdb_account.main.id
+  cosmos_account_name        = azurerm_cosmosdb_account.main.name
   cosmos_resource_group_name = data.azurerm_resource_group.main.name
-  arm_tenant_id           = data.azurerm_client_config.current.tenant_id
-  arm_subscription_id     = data.azurerm_client_config.current.subscription_id
-  google_client_id        = data.azurerm_key_vault_secret.google_oauth_client_id.value
+  arm_tenant_id              = data.azurerm_client_config.current.tenant_id
+  arm_subscription_id        = data.azurerm_client_config.current.subscription_id
+  google_client_id           = data.azurerm_key_vault_secret.google_oauth_client_id.value
 }
 
