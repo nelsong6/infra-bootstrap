@@ -161,6 +161,16 @@ import {
   id = "fzt"
 }
 
+moved {
+  from = module.app["fuzzy-tiered"]
+  to   = module.app["fzt"]
+}
+
+moved {
+  from = module.app["fuzzy-tiers-showcase"]
+  to   = module.app["fzt-showcase"]
+}
+
 module "app" {
   source   = "./app"
   for_each = toset([
