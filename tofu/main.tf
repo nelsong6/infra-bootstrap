@@ -152,6 +152,11 @@ locals {
   }
 }
 
+import {
+  to = module.app["fuzzy-tiered"].github_repository.repo
+  id = "fuzzy-tiered"
+}
+
 module "app" {
   source   = "./app"
   for_each = toset([
