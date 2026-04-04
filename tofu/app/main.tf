@@ -48,6 +48,12 @@ variable "ci_only" {
   default     = false
 }
 
+variable "topics" {
+  description = "GitHub repository topics for categorization and discovery."
+  type        = list(string)
+  default     = []
+}
+
 # ── Web-only variables (ignored when ci_only = true) ────────────────
 
 variable "app_config_id" {
@@ -81,6 +87,7 @@ resource "github_repository" "repo" {
   name       = var.name
   visibility = "public"
   auto_init  = true
+  topics     = var.topics
 
   allow_merge_commit     = false
   allow_squash_merge     = true
