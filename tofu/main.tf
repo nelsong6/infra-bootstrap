@@ -148,7 +148,7 @@ resource "azurerm_role_assignment" "shared_identity_storage" {
 locals {
   ci_only_apps = toset(["fzt"])
   app_default_branch = {
-    "fzt" = "master"
+    "fzt" = "main"
   }
   app_topics = {
     "fzt-showcase" = ["fzt-downstream"]
