@@ -179,6 +179,7 @@ module "app" {
     "eight-queens",
     "fzt",
     "fzt-showcase",
+    "house-hunt",
     "infra-diagram",
     "investing",
     "kill-me",
