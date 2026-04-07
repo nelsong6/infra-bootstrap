@@ -146,7 +146,7 @@ resource "azurerm_role_assignment" "shared_identity_storage" {
 }
 
 locals {
-  ci_only_apps = toset(["fzt"])
+  ci_only_apps = toset(["fzt", "fzt-terminal"])
   app_default_branch = {
     "fzt" = "main"
   }
@@ -179,6 +179,7 @@ module "app" {
     "eight-queens",
     "fzt",
     "fzt-showcase",
+    "fzt-terminal",
     "house-hunt",
     "infra-diagram",
     "investing",
