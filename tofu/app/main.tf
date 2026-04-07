@@ -54,6 +54,12 @@ variable "topics" {
   default     = []
 }
 
+variable "pages_branch" {
+  description = "Branch to serve GitHub Pages from. Empty string disables Pages."
+  type        = string
+  default     = ""
+}
+
 # ── Web-only variables (ignored when ci_only = true) ────────────────
 
 variable "app_config_id" {
@@ -93,6 +99,16 @@ resource "github_repository" "repo" {
   allow_squash_merge     = true
   allow_rebase_merge     = false
   delete_branch_on_merge = true
+
+  dynamic "pages" {
+    for_each = var.pages_branch != "" ? [1] : []
+    content {
+      source {
+        branch = var.pages_branch
+        path   = "/"
+      }
+    }
+  }
 }
 
 # Per-app Azure AD application + service principal
