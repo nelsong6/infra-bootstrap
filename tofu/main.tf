@@ -145,6 +145,13 @@ resource "azurerm_role_assignment" "shared_identity_storage" {
   principal_id         = azurerm_user_assigned_identity.shared.principal_id
 }
 
+# Storage Blob Data Contributor for Nelson's personal identity (local dev API)
+resource "azurerm_role_assignment" "nelson_storage" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = "cf57d57d-1411-4f59-b517-e9a8600b140a"
+}
+
 locals {
   ci_only_apps = toset(["fzt", "fzt-terminal"])
   app_default_branch = {
