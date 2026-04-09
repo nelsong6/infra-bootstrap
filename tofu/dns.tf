@@ -19,10 +19,10 @@ resource "azurerm_dns_zone" "main" {
 # ============================================================================
 
 # ============================================================================
-# Email DNS Records (Namecheap Private Email)
+# Email DNS Records (Google Workspace)
 # ============================================================================
 
-# MX Records - Email delivery
+# MX Records - Email delivery via Google Workspace
 resource "azurerm_dns_mx_record" "email" {
   name                = "@" # Root domain
   zone_name           = azurerm_dns_zone.main.name
@@ -30,13 +30,28 @@ resource "azurerm_dns_mx_record" "email" {
   ttl                 = 3600
 
   record {
-    preference = 10
-    exchange   = "mx1.privateemail.com"
+    preference = 1
+    exchange   = "aspmx.l.google.com"
   }
 
   record {
-    preference = 20
-    exchange   = "mx2.privateemail.com"
+    preference = 5
+    exchange   = "alt1.aspmx.l.google.com"
+  }
+
+  record {
+    preference = 5
+    exchange   = "alt2.aspmx.l.google.com"
+  }
+
+  record {
+    preference = 10
+    exchange   = "alt3.aspmx.l.google.com"
+  }
+
+  record {
+    preference = 10
+    exchange   = "alt4.aspmx.l.google.com"
   }
 
 }
@@ -49,7 +64,7 @@ resource "azurerm_dns_txt_record" "apex" {
   ttl                 = 3600
 
   record {
-    value = "v=spf1 include:spf.privateemail.com ~all"
+    value = "v=spf1 include:_spf.google.com ~all"
   }
 
   record {
@@ -73,33 +88,27 @@ resource "azurerm_dns_txt_record" "dmarc" {
   ttl                 = 3600
 
   record {
-    value = "v=DMARC1; p=none;"
+    value = "v=DMARC1; p=quarantine; rua=mailto:nelson@romaine.life"
   }
 
 }
 
-# DKIM Record - Email authentication signature
+# DKIM Record - Google Workspace email authentication
+# Generate the DKIM key in Google Admin Console:
+# Apps > Google Workspace > Gmail > Authenticate email > Generate new record
+# Then replace the placeholder value below with the generated key.
 resource "azurerm_dns_txt_record" "dkim" {
-  name                = "default._domainkey" # Standard Namecheap selector
+  name                = "google._domainkey" # Google Workspace selector
   zone_name           = azurerm_dns_zone.main.name
   resource_group_name = data.azurerm_resource_group.main.name
   ttl                 = 3600
 
   record {
-    value = "v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1E5ptWwKni8v4Ywx2dpXDpexypFEkNssDi9jcWfhtWYF/bhwMgKXjbhTzhcvshOoWnx5E6lV4Gyh+I0Q8dhu4wl8VgosUtWjJWUj3Zdi7jfNVh7mGuthId6jNUOqMzYi64NCMcuOuyjcIij90klgNmVQXMBHKENUVPoSXb1TZ8qRyWwz+D9l5/Yp0q0y2OnASshSj1Ik/wzE5mrGZBteWjMZLca920cZgkgorgVwZIuXjin9pzqIG4QNjgEouhWoCOgECW2CIPoqnuJ+n6LgiDFJnpPQEIOdeFbDfr4+0xrIMO3R9Uxlpu+jcYFSIbCbbqCuWt8vlA/q5qhkJ+MinQIDAQAB"
+    value = "v=DKIM1; k=rsa; p=PLACEHOLDER_GENERATE_IN_GOOGLE_ADMIN"
   }
 
 }
 
-# Autoconfig - Email client configuration
-resource "azurerm_dns_cname_record" "autoconfig" {
-  name                = "autoconfig"
-  zone_name           = azurerm_dns_zone.main.name
-  resource_group_name = data.azurerm_resource_group.main.name
-  ttl                 = 3600
-  record              = "privateemail.com"
-
-}
 
 # Auth0 Custom Domain
 resource "azurerm_dns_cname_record" "auth0" {
@@ -111,12 +120,3 @@ resource "azurerm_dns_cname_record" "auth0" {
 
 }
 
-# Autodiscover - Email client configuration
-resource "azurerm_dns_cname_record" "autodiscover" {
-  name                = "autodiscover"
-  zone_name           = azurerm_dns_zone.main.name
-  resource_group_name = data.azurerm_resource_group.main.name
-  ttl                 = 3600
-  record              = "privateemail.com"
-
-}
