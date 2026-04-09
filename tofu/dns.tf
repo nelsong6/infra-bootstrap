@@ -104,7 +104,7 @@ resource "azurerm_dns_txt_record" "dkim" {
   ttl                 = 3600
 
   record {
-    value = "v=DKIM1; k=rsa; p=PLACEHOLDER_GENERATE_IN_GOOGLE_ADMIN"
+    value = "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5IrwONgV1pb5Y5PIsWZOrkwEdrG3I6us0tg/bnXtc69LaBU+MPwzG3Tx+SIsnuOza3pfc/c6rKcn8hVp+jWat0ZAZsrpQg2eh8V9DokPGf7Cre+8QQkmA9LapcW33SsKsx5BSAtlU+6vrmJrYHafNFTNFjgplOTjge7gRiVzHir2i7Wf08f4O4XVMjmu4bD9XwCSQm+eJ1qszLrjDWHd7OxlqD1wkEuBtIivVkZLjczlvEGl0itmyvX232+oSr+BLmJBrDG4wQ5pmMK7s2jXW8zGFW5s1TqsHTwrYXCsHrdY4me9Z7po1aIz8T2NbLerQ1hv0BMB75z+utpcRlMwPQIDAQAB"
   }
 
 }
