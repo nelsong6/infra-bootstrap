@@ -161,9 +161,7 @@ locals {
     "fzt-showcase" = ["fzt-downstream"]
     "my-homepage"  = ["fzt-downstream"]
   }
-  app_pages_branch = {
-    "house-hunt" = "gh-pages"
-  }
+  app_pages_branch = {}
 }
 
 import {
