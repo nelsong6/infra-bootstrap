@@ -25,5 +25,5 @@ By default, apps also get heavy web roles via the `app/web/` sub-module: Contrib
 - **infra-bootstrap** (this repo) — root infrastructure
 - **api** — shared always-on backend consolidating all app backends into a single Container App
 - **my-homepage**, **kill-me**, **bender-world**, **eight-queens**, **plant-agent**, **fzt-showcase** — app repos that consume shared infra
-- **infra-diagram** — interactive architecture documentation site at `docs.romaine.life`
+- **diagrams** — interactive architecture documentation site at `diagrams.romaine.life`
 - **pipeline-templates** — reusable GitHub Actions workflows

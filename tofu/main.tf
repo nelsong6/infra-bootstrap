@@ -179,17 +179,22 @@ moved {
   to   = module.app["fzt-showcase"]
 }
 
+moved {
+  from = module.app["infra-diagram"]
+  to   = module.app["diagrams"]
+}
+
 module "app" {
   source   = "./app"
   for_each = toset([
     "api",
     "bender-world",
+    "diagrams",
     "eight-queens",
     "fzt",
     "fzt-showcase",
     "fzt-terminal",
     "house-hunt",
-    "infra-diagram",
     "investing",
     "kill-me",
     "lights",
