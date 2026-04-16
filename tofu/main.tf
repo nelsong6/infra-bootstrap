@@ -153,7 +153,7 @@ resource "azurerm_role_assignment" "nelson_storage" {
 }
 
 locals {
-  ci_only_apps = toset(["fzt", "fzt-terminal"])
+  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker"])
   app_default_branch = {
     "fzt" = "main"
   }
@@ -167,6 +167,30 @@ locals {
 import {
   to = module.app["fzt"].github_repository.repo
   id = "fzt"
+}
+
+# The following repos were created outside infra-bootstrap (fzt-frontend and
+# fzt-automate on 2026-04-07 as stubs, fzt-browser on 2026-04-16 during the
+# split, fzt-picker pre-split). Import tells tofu they already exist.
+
+import {
+  to = module.app["fzt-frontend"].github_repository.repo
+  id = "fzt-frontend"
+}
+
+import {
+  to = module.app["fzt-automate"].github_repository.repo
+  id = "fzt-automate"
+}
+
+import {
+  to = module.app["fzt-browser"].github_repository.repo
+  id = "fzt-browser"
+}
+
+import {
+  to = module.app["fzt-picker"].github_repository.repo
+  id = "fzt-picker"
 }
 
 moved {
@@ -192,6 +216,10 @@ module "app" {
     "diagrams",
     "eight-queens",
     "fzt",
+    "fzt-automate",
+    "fzt-browser",
+    "fzt-frontend",
+    "fzt-picker",
     "fzt-showcase",
     "fzt-terminal",
     "house-hunt",
