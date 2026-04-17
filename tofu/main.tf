@@ -155,7 +155,8 @@ resource "azurerm_role_assignment" "nelson_storage" {
 locals {
   ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker"])
   app_default_branch = {
-    "fzt" = "main"
+    "fzt"          = "main"
+    "llm-explorer" = "master"
   }
   app_topics = {
     "fzt-showcase" = ["fzt-downstream"]
@@ -193,6 +194,14 @@ import {
   id = "fzt-picker"
 }
 
+# llm-explorer: pre-existing repo on master branch. Needs the full web
+# sub-module (not ci_only) since it's an app with a frontend; currently
+# local-only but will be deployed as a SWA later.
+import {
+  to = module.app["llm-explorer"].github_repository.repo
+  id = "llm-explorer"
+}
+
 moved {
   from = module.app["fuzzy-tiered"]
   to   = module.app["fzt"]
@@ -226,6 +235,7 @@ module "app" {
     "investing",
     "kill-me",
     "lights",
+    "llm-explorer",
     "my-homepage",
     "plant-agent",
   ])
