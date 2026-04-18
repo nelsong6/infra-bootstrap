@@ -155,8 +155,7 @@ resource "azurerm_role_assignment" "nelson_storage" {
 locals {
   ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker"])
   app_default_branch = {
-    "fzt"          = "main"
-    "llm-explorer" = "master"
+    "fzt" = "main"
   }
   app_topics = {
     "fzt-showcase" = ["fzt-downstream"]
