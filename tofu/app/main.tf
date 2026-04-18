@@ -95,6 +95,11 @@ resource "github_repository" "repo" {
   auto_init  = true
   topics     = var.topics
 
+  # terraform-github-provider defaults has_issues to false, unlike GitHub's
+  # web UI which defaults it to true. Explicitly enable so new apps land
+  # with issues on.
+  has_issues = true
+
   allow_merge_commit     = false
   allow_squash_merge     = true
   allow_rebase_merge     = false
