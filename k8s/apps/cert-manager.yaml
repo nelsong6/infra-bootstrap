@@ -14,6 +14,17 @@ spec:
         installCRDs: true
         config:
           enableGatewayAPI: true
+        webhook:
+          namespaceSelector:
+            matchExpressions:
+              - key: control-plane
+                operator: NotIn
+                values:
+                  - "true"
+              - key: kubernetes.azure.com/managedby
+                operator: NotIn
+                values:
+                  - aks
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
