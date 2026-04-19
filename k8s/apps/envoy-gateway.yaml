@@ -6,11 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    chart: gateway-helm
-    repoURL: registry-1.docker.io/envoyproxy
-    targetRevision: v1.7.2
-    helm:
-      releaseName: eg
+    repoURL: https://github.com/nelsong6/infra-bootstrap.git
+    targetRevision: main
+    path: k8s/envoy-gateway
   destination:
     server: https://kubernetes.default.svc
     namespace: envoy-gateway-system

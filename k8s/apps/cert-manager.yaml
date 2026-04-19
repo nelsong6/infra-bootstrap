@@ -6,45 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    chart: cert-manager
-    repoURL: https://charts.jetstack.io
-    targetRevision: v1.20.2
-    helm:
-      values: |
-        installCRDs: true
-        config:
-          enableGatewayAPI: true
-        webhook:
-          validatingWebhookConfiguration:
-            namespaceSelector:
-              matchExpressions:
-                - key: cert-manager.io/disable-validation
-                  operator: NotIn
-                  values:
-                    - "true"
-                - key: control-plane
-                  operator: NotIn
-                  values:
-                    - "true"
-                - key: kubernetes.azure.com/managedby
-                  operator: NotIn
-                  values:
-                    - aks
-          mutatingWebhookConfiguration:
-            namespaceSelector:
-              matchExpressions:
-                - key: cert-manager.io/disable-validation
-                  operator: NotIn
-                  values:
-                    - "true"
-                - key: control-plane
-                  operator: NotIn
-                  values:
-                    - "true"
-                - key: kubernetes.azure.com/managedby
-                  operator: NotIn
-                  values:
-                    - aks
+    repoURL: https://github.com/nelsong6/infra-bootstrap.git
+    targetRevision: main
+    path: k8s/cert-manager
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager

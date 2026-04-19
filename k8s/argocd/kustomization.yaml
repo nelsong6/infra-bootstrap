@@ -7,3 +7,8 @@ helmCharts:
     releaseName: argocd
     namespace: argocd
     valuesFile: values.yaml
+resources:
+  - argocd-cert.yaml
+  - argocd-route.yaml
+  - argocd-reference-grant.yaml
+  - oauth2-proxy-secret.yaml
