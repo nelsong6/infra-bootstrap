@@ -159,7 +159,7 @@ locals {
   # push images) and wires a federated credential to the shared managed
   # identity for `system:serviceaccount:<app>:infra-shared`. Expand as each
   # app migrates off the shared api onto its own K8s Deployment.
-  k8s_apps = toset(["investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend"])
+  k8s_apps = toset(["investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage"])
   app_default_branch = {
     "fzt" = "main"
   }
