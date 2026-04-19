@@ -132,3 +132,45 @@ output "landing_page_static_web_app_name" {
   description = "Name of the landing page Static Web App"
 }
 
+# ============================================================================
+# AKS Outputs
+# ============================================================================
+
+output "aks_cluster_name" {
+  value       = azurerm_kubernetes_cluster.main.name
+  description = "Name of the AKS cluster"
+}
+
+output "aks_cluster_id" {
+  value       = azurerm_kubernetes_cluster.main.id
+  description = "Resource ID of the AKS cluster"
+}
+
+output "aks_oidc_issuer_url" {
+  value       = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  description = "OIDC issuer URL for workload identity federation"
+}
+
+# ============================================================================
+# Container Registry Outputs
+# ============================================================================
+
+output "acr_name" {
+  value       = azurerm_container_registry.main.name
+  description = "Name of the Azure Container Registry"
+}
+
+output "acr_login_server" {
+  value       = azurerm_container_registry.main.login_server
+  description = "Login server URL for the Azure Container Registry (e.g., romainecr.azurecr.io)"
+}
+
+# ============================================================================
+# Shared Identity Outputs
+# ============================================================================
+
+output "shared_identity_client_id" {
+  value       = azurerm_user_assigned_identity.shared.client_id
+  description = "Client ID of the shared managed identity (used for workload identity annotations on K8s service accounts)"
+}
+
