@@ -10,9 +10,17 @@
 # Microsoft "Sign in with Microsoft" (shared across all projects)
 # ============================================================================
 
+data "azuread_client_config" "current" {}
+
 resource "azuread_application" "microsoft_login" {
   display_name     = "romaine.life - Social Login"
   sign_in_audience = "AzureADandPersonalMicrosoftAccount"
+
+  # The azuread provider doesn't auto-add the creating SP as owner — without
+  # this, `Application.ReadWrite.OwnedBy` (this repo's Graph permission)
+  # returns 403 on any subsequent update. Declared explicitly so the owners
+  # list matches the tofu-run principal.
+  owners = [data.azuread_client_config.current.object_id]
 
   api {
     requested_access_token_version = 2
@@ -64,6 +72,9 @@ resource "azurerm_key_vault_secret" "microsoft_oauth_client_secret" {
 resource "azuread_application" "argocd" {
   display_name     = "ArgoCD"
   sign_in_audience = "AzureADandPersonalMicrosoftAccount"
+
+  # See comment on microsoft_login above — same ownership self-assertion.
+  owners = [data.azuread_client_config.current.object_id]
 
   api {
     requested_access_token_version = 2
