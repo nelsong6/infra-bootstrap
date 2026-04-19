@@ -12,20 +12,10 @@ configs:
   cm:
     kustomize.buildOptions: --enable-helm
     url: https://argocd.romaine.life
-    oidc.config: |
-      name: Microsoft
-      issuer: https://login.microsoftonline.com/2236b5e4-81d2-4d82-bde5-17b1037999ea/v2.0
-      clientID: $oidc.clientId
-      clientSecret: $oidc.clientSecret
-      requestedScopes:
-        - openid
-        - profile
-        - email
-  # RBAC — personal tenant, only one user, default to admin
+    # Auth handled by oauth2-proxy — no built-in OIDC needed
+  # RBAC — oauth2-proxy gates access, ArgoCD defaults to admin
   rbac:
-    policy.default: role:readonly
-    policy.csv: |
-      g, cf57d57d-1411-4f59-b517-e9a8600b140a, role:admin
+    policy.default: role:admin
 
 # Single replica — personal infra, no HA needed
 controller:
@@ -43,7 +33,7 @@ repoServer:
 redis:
   enabled: true
 
-# Disable dex (using ArgoCD's built-in OIDC)
+# Disable dex (auth handled by oauth2-proxy)
 dex:
   enabled: false
 

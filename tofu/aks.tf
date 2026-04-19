@@ -78,6 +78,16 @@ resource "azurerm_federated_identity_credential" "external_dns" {
   subject             = "system:serviceaccount:external-dns:external-dns"
 }
 
+# ExternalSecrets — syncs secrets from Key Vault to K8s
+resource "azurerm_federated_identity_credential" "external_secrets" {
+  name                = "aks-external-secrets"
+  resource_group_name = data.azurerm_resource_group.main.name
+  parent_id           = azurerm_user_assigned_identity.shared.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject             = "system:serviceaccount:external-secrets:external-secrets"
+}
+
 # DNS Zone Contributor — allows ExternalDNS to create/update/delete records
 resource "azurerm_role_assignment" "shared_identity_dns" {
   scope                = azurerm_dns_zone.main.id

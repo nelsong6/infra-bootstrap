@@ -72,6 +72,7 @@ resource "azuread_application" "argocd" {
   web {
     redirect_uris = [
       "https://argocd.romaine.life/auth/callback",
+      "https://argocd.romaine.life/oauth2/callback",
     ]
   }
 
@@ -97,6 +98,17 @@ resource "azurerm_key_vault_secret" "argocd_oidc_client_secret" {
   name         = "argocd-oidc-client-secret"
   value        = azuread_application_password.argocd.value
   key_vault_id = data.azurerm_key_vault.main.id
+}
+
+resource "azurerm_key_vault_secret" "oauth2_proxy_cookie_secret" {
+  name         = "oauth2-proxy-cookie-secret"
+  value        = random_password.oauth2_proxy_cookie.result
+  key_vault_id = data.azurerm_key_vault.main.id
+}
+
+resource "random_password" "oauth2_proxy_cookie" {
+  length  = 32
+  special = false
 }
 
 # ============================================================================

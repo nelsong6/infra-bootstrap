@@ -1,5 +1,6 @@
 # HTTPRoute for ArgoCD UI.
-# Routes argocd.romaine.life to the ArgoCD server service.
+# Routes argocd.romaine.life through oauth2-proxy for authentication,
+# which forwards authenticated requests to ArgoCD server.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -13,5 +14,5 @@ spec:
     - argocd.romaine.life
   rules:
     - backendRefs:
-        - name: argocd-server
-          port: 80
+        - name: oauth2-proxy
+          port: 4180
