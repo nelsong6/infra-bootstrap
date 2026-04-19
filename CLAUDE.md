@@ -1,29 +1,68 @@
 # infra-bootstrap
 
-Root infrastructure repo. Creates shared resources consumed by all app repos.
+Root infrastructure repo. Creates shared Azure resources (tofu) and manages the AKS cluster platform (ArgoCD + GitOps).
 
 ## Architecture
 
-- Landing page infra (SWA, DNS, custom domain) lives here, not in the landing-page repo
-- The landing-page repo has a `trigger-infra.yml` workflow that triggers infra-bootstrap on push to `frontend/**`
-- The `@` TXT record in dns.tf is named `apex` and combines SPF, Google verification, and SWA validation
+Two layers:
+
+- **`tofu/`** — OpenTofu managed by GitHub Actions CI. Creates AKS cluster, VNet, ACR, DNS zone, Cosmos DB, App Configuration, Key Vault references, managed identity, federated credentials, Entra app registrations. Plan on PR, apply on push to main.
+- **`k8s/`** — Kubernetes manifests managed by ArgoCD. Everything deployed to the cluster lives here. ArgoCD auto-syncs from git.
+
+### Kubernetes Layout
+
+```
+k8s/
+  apps/              # ArgoCD Application manifests (one per component)
+  argocd/            # Kustomize: Helm chart + ArgoCD-specific resources (cert, route, reference grant)
+  cert-manager/      # Chart wrapper: subchart + ClusterIssuer template
+  envoy-gateway/     # Chart wrapper: subchart + Gateway + GatewayClass templates
+  external-dns/      # Chart wrapper: subchart + ExternalSecret for azure.json
+  external-secrets/  # Chart wrapper: subchart + ClusterSecretStore template
+  root-app.yaml      # App-of-apps (applied once by bootstrap, not self-managed)
+```
+
+### Chart Wrapper Pattern
+
+Each component that needs config resources alongside its Helm chart gets a local wrapper: `Chart.yaml` declares the upstream chart as a dependency, `values.yaml` configures it, and `templates/` holds config resources (ClusterIssuer, ClusterSecretStore, Gateway, ExternalSecrets, etc.). ArgoCD points at the wrapper directory. Resources live alongside their concern.
+
+### Secrets Flow
+
+Tofu outputs → Key Vault → ExternalSecrets Operator → K8s Secrets. No manual `kubectl create secret`. The ClusterSecretStore (`romaine-kv`) uses workload identity on the shared managed identity.
+
+### Bootstrap
+
+The CI workflow (`tofu.yml`) has a bootstrap job that runs once: installs ArgoCD via Kustomize (same definition ArgoCD uses to self-manage), creates repo/registry secrets, and applies the Application manifests. After first run, ArgoCD owns everything.
+
+## Cluster Components
+
+- **AKS** (`infra-aks`) — Free tier, 1x Standard_B2s_v2, Azure CNI Overlay, workload identity
+- **ACR** (`romainecr`) — Basic SKU, AcrPull for kubelet identity
+- **Envoy Gateway** — Gateway API controller + shared Gateway with HTTP/HTTPS listeners
+- **ExternalDNS** — Azure DNS via workload identity, watches HTTPRoute resources
+- **cert-manager** — Let's Encrypt HTTP-01 via Gateway API
+- **ExternalSecrets** — ClusterSecretStore for Key Vault, workload identity
+- **ArgoCD** — GitOps, dex SSO (Microsoft Entra), Kustomize self-management
+- **ServerSideApply** — Default sync option for all apps (large CRDs, AKS-injected labels)
 
 ## App Onboarding
 
-The app module (`tofu/app/main.tf`) creates per-app: GitHub repo, Azure AD app registration + service principal, OIDC federated credentials, and GitHub Actions variables (`ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID`, `KEY_VAULT_NAME`). Apps are added to the `for_each` list in the app module.
+The app module (`tofu/app/main.tf`) creates per-app: GitHub repo, Azure AD app registration + service principal, OIDC federated credentials, and GitHub Actions variables. Setting `ci_only = true` skips web roles.
 
-By default, apps also get heavy web roles via the `app/web/` sub-module: Contributor, RBAC Admin, Key Vault Secrets Officer, App Configuration Data Owner, Storage Blob Data Reader, Cosmos DB Data Reader, Graph app management, and additional variables (`TFSTATE_STORAGE_ACCOUNT`, `GOOGLE_CLIENT_ID`). Setting `ci_only = true` skips the web sub-module entirely — the app gets only OIDC identity + Key Vault Secrets User (read-only). Used for CLI tools like fzt that need CI auth but have no web presence.
+## SSO
 
-## Infrastructure Pattern
-
-- Shared resources: Azure Container App Environment, Cosmos DB (free tier), App Configuration, DNS zone (romaine.life), Key Vault, User-Assigned Managed Identity (infra-shared-identity)
-- Pipeline templates repo (nelsong6/pipeline-templates) has reusable GitHub Actions workflows
-- App pattern: Static Web App (frontend) + route package consumed by shared API (`api` repo) + Cosmos DB. Per-app Container Apps have been decommissioned in favor of the shared always-on API
+Dex with Microsoft connector (`tenant: common`, any Microsoft account). Scopes: `openid profile email user.read`. RBAC maps email to admin role. Admin fallback via local credentials.
 
 ## Related Repos
 
-- **infra-bootstrap** (this repo) — root infrastructure
-- **api** — shared always-on backend consolidating all app backends into a single Container App
-- **my-homepage**, **kill-me**, **bender-world**, **eight-queens**, **plant-agent**, **fzt-showcase** — app repos that consume shared infra
+- **infra-bootstrap** (this repo) — root infrastructure + cluster platform
+- **api** — shared always-on backend (migrating to per-app K8s deployments, tracked by #24)
+- **my-homepage**, **kill-me**, **bender-world**, **eight-queens**, **plant-agent**, **fzt-showcase** — app repos
 - **diagrams** — interactive architecture documentation site at `diagrams.romaine.life`
 - **pipeline-templates** — reusable GitHub Actions workflows
+
+## Infrastructure Pattern (Legacy)
+
+- Container App Environment (`infra-aca`) — still running, apps migrating to AKS (#23)
+- Static Web Apps — being replaced by Envoy Gateway ingress
+- Shared API pattern — being replaced by per-app K8s deployments (#24)
