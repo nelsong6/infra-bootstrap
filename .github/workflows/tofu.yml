@@ -283,7 +283,7 @@ jobs:
       # ArgoCD needs Docker Hub auth to pull OCI Helm charts (Docker
       # Hub returns 401 on tag resolution even for public images).
       - name: Configure Docker Hub repo access
-        if: steps.aks.outputs.exists == 'true'
+        if: steps.aks.outputs.exists == 'true' && steps.argocd.outputs.status == 'install'
         run: |
           DOCKER_USER=$(az keyvault secret show --vault-name romaine-kv --name docker-hub-username --query value -o tsv)
           DOCKER_TOKEN=$(az keyvault secret show --vault-name romaine-kv --name docker-hub-token --query value -o tsv)
@@ -305,7 +305,7 @@ jobs:
       # K8s secret. ArgoCD reads $argocd-oidc:client-id and
       # $argocd-oidc:client-secret from this secret.
       - name: Sync ArgoCD OIDC credentials
-        if: steps.aks.outputs.exists == 'true'
+        if: steps.aks.outputs.exists == 'true' && steps.argocd.outputs.status == 'install'
         run: |
           CLIENT_ID=$(az keyvault secret show --vault-name romaine-kv --name argocd-oidc-client-id --query value -o tsv)
           CLIENT_SECRET=$(az keyvault secret show --vault-name romaine-kv --name argocd-oidc-client-secret --query value -o tsv)
@@ -320,7 +320,7 @@ jobs:
       # This secret can't live in git (has subscription-specific config)
       # so we create it here before ArgoCD deploys ExternalDNS.
       - name: Create ExternalDNS Azure config
-        if: steps.aks.outputs.exists == 'true'
+        if: steps.aks.outputs.exists == 'true' && steps.argocd.outputs.status == 'install'
         run: |
           kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f -
           kubectl create secret generic azure-config-file \
@@ -339,7 +339,7 @@ jobs:
       # Gateway resource, ClusterIssuer, certs, routes) is managed
       # by ArgoCD via these apps. Single source of truth.
       - name: Apply ArgoCD apps
-        if: steps.aks.outputs.exists == 'true'
+        if: steps.aks.outputs.exists == 'true' && steps.argocd.outputs.status == 'install'
         run: |
           kubectl apply -f k8s/argocd/apps/
           kubectl apply -f k8s/argocd/root-app.yaml
