@@ -8,8 +8,9 @@ global:
     level: warn
 
 configs:
-  # OIDC config — Microsoft Entra ID
+  # Enable Kustomize Helm chart inflation
   cm:
+    kustomize.buildOptions: --enable-helm
     url: https://argocd.romaine.life
     oidc.config: |
       name: Microsoft
