@@ -1,0 +1,23 @@
+# App-of-apps root Application.
+# ArgoCD watches k8s/argocd/apps/ for Application manifests and
+# auto-syncs them. Each file in that directory defines a component
+# (ingress-nginx, cert-manager, external-secrets, external-dns, etc.).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nelsong6/infra-bootstrap.git
+    targetRevision: main
+    path: k8s/argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

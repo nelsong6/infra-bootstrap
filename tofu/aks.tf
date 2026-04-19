@@ -67,3 +67,20 @@ resource "azurerm_federated_identity_credential" "shared_workload" {
   issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
   subject             = "system:serviceaccount:default:infra-shared"
 }
+
+# ExternalDNS — manages DNS records in Azure DNS from Gateway/HTTPRoute resources
+resource "azurerm_federated_identity_credential" "external_dns" {
+  name                = "aks-external-dns"
+  resource_group_name = data.azurerm_resource_group.main.name
+  parent_id           = azurerm_user_assigned_identity.shared.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject             = "system:serviceaccount:external-dns:external-dns"
+}
+
+# DNS Zone Contributor — allows ExternalDNS to create/update/delete records
+resource "azurerm_role_assignment" "shared_identity_dns" {
+  scope                = azurerm_dns_zone.main.id
+  role_definition_name = "DNS Zone Contributor"
+  principal_id         = azurerm_user_assigned_identity.shared.principal_id
+}

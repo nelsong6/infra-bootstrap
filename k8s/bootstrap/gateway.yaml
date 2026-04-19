@@ -1,0 +1,34 @@
+# Shared Gateway for all apps.
+# Envoy Gateway watches this and provisions an envoy proxy with a
+# LoadBalancer service. HTTPRoute resources reference this gateway
+# to route traffic to their backends.
+#
+# Each app adds a listener here for its hostname + TLS cert,
+# and an HTTPRoute pointing to its backend service.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: main
+  namespace: envoy-gateway-system
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: argocd-https
+      protocol: HTTPS
+      port: 443
+      hostname: argocd.romaine.life
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argocd-tls
+            namespace: argocd
+      allowedRoutes:
+        namespaces:
+          from: All

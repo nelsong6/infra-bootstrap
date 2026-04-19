@@ -1,0 +1,36 @@
+# ArgoCD Helm chart values (argo/argo-cd)
+# Minimal config for personal infra — single replica, no HA.
+# Routing handled by Gateway API (HTTPRoute + Envoy Gateway),
+# not ArgoCD's built-in ingress.
+
+global:
+  logging:
+    level: warn
+
+# Single replica — personal infra, no HA needed
+controller:
+  replicas: 1
+
+server:
+  replicas: 1
+  # Gateway handles TLS termination — disable ArgoCD's internal TLS
+  extraArgs:
+    - --insecure
+
+repoServer:
+  replicas: 1
+
+redis:
+  enabled: true
+
+# Disable dex (use ArgoCD's built-in auth)
+dex:
+  enabled: false
+
+# Disable notifications (can enable later)
+notifications:
+  enabled: false
+
+# Disable applicationSet (can enable later if needed)
+applicationSet:
+  enabled: false
