@@ -33,6 +33,7 @@ configs:
     scopes: '[email]'
     policy.csv: |
       g, nelson-devops-project@outlook.com, role:admin
+      g, brenden.owens39@gmail.com, role:admin
 
 # Single replica — personal infra, no HA needed
 controller:
