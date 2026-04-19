@@ -1,6 +1,9 @@
 # GatewayClass for Envoy Gateway.
-# Not included in the Helm chart by design — the chart installs the
-# controller and CRDs, the GatewayClass is created separately.
+# Not included in the gateway-helm chart by design — the chart installs
+# the controller and CRDs only. The GatewayClass is created separately
+# per the Envoy Gateway install docs:
+#   https://gateway.envoyproxy.io/docs/install/install-helm/
+#   https://gateway.envoyproxy.io/docs/tasks/quickstart/
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
