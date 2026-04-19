@@ -27,7 +27,7 @@ configs:
     policy.default: role:readonly
     scopes: '[email]'
     policy.csv: |
-      g, fullnelsongrip@gmail.com, role:admin
+      g, nelson-devops-project@outlook.com, role:admin
 
 # Single replica — personal infra, no HA needed
 controller:
