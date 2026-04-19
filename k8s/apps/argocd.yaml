@@ -5,16 +5,10 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  sources:
-    - chart: argo-cd
-      repoURL: https://argoproj.github.io/argo-helm
-      targetRevision: 7.*
-      helm:
-        valueFiles:
-          - $values/k8s/argocd/values.yaml
-    - repoURL: https://github.com/nelsong6/infra-bootstrap.git
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: https://github.com/nelsong6/infra-bootstrap.git
+    targetRevision: main
+    path: k8s/argocd
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

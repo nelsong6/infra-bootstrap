@@ -1,5 +1,5 @@
 # App-of-apps root Application.
-# ArgoCD watches k8s/argocd/apps/ for Application manifests.
+# ArgoCD watches k8s/apps/ for Application manifests.
 # Auto-sync is OFF — Nelson manually syncs new apps after reviewing.
 # Individual apps within the directory have their own auto-sync enabled.
 apiVersion: argoproj.io/v1alpha1
@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/nelsong6/infra-bootstrap.git
     targetRevision: main
-    path: k8s/argocd/apps
+    path: k8s/apps
   destination:
     server: https://kubernetes.default.svc
   syncPolicy: {}
