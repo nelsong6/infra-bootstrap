@@ -39,20 +39,6 @@ output "dns_zone_id" {
 }
 
 # ============================================================================
-# Container App Environment Outputs
-# ============================================================================
-
-output "container_app_environment_name" {
-  value       = azurerm_container_app_environment.main.name
-  description = "Name of the shared Container App Environment"
-}
-
-output "container_app_environment_id" {
-  value       = azurerm_container_app_environment.main.id
-  description = "Resource ID of the shared Container App Environment"
-}
-
-# ============================================================================
 # Cosmos DB Outputs
 # ============================================================================
 

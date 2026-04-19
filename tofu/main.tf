@@ -17,19 +17,6 @@ data "azurerm_resource_group" "main" {
 }
 
 # ============================================================================
-# Azure Container App Environment
-# ============================================================================
-# Shared container app environment for hosting containerized applications.
-# Individual apps deploy their container apps into this shared environment.
-
-resource "azurerm_container_app_environment" "main" {
-  name                = "infra-aca"
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
-
-}
-
-# ============================================================================
 # Shared Database Infrastructure - Cosmos DB
 # ============================================================================
 # This file contains shared database resources that can be used by applications.
