@@ -285,20 +285,36 @@ jobs:
             --resource-group infra --name infra-shared-identity \
             --query clientId -o tsv)
 
+          kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f -
+
+          # Azure config for workload identity — ExternalDNS reads this
+          # instead of using CLI flags for Azure auth
+          kubectl create secret generic azure-config-file \
+            --namespace external-dns \
+            --from-literal=azure.json="{
+              \"tenantId\": \"${{ vars.ARM_TENANT_ID }}\",
+              \"subscriptionId\": \"${{ vars.ARM_SUBSCRIPTION_ID }}\",
+              \"resourceGroup\": \"infra\",
+              \"useWorkloadIdentityExtension\": true
+            }" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
           helm repo add external-dns https://kubernetes-sigs.github.io/external-dns
           helm repo update
           helm upgrade --install external-dns external-dns/external-dns \
             --namespace external-dns \
-            --create-namespace \
             --set provider.name=azure \
             --set txtOwnerId=infra-aks \
             --set policy=sync \
             --set "sources={gateway-httproute,gateway-grpcroute,gateway-tcproute,gateway-tlsroute}" \
-            --set "extraArgs[0]=--azure-resource-group=infra" \
-            --set "extraArgs[1]=--azure-subscription-id=${{ vars.ARM_SUBSCRIPTION_ID }}" \
             --set "serviceAccount.annotations.azure\.workload\.identity/client-id=$CLIENT_ID" \
             --set-string "podLabels.azure\.workload\.identity/use=true" \
             --set "domainFilters[0]=romaine.life" \
+            --set "extraVolumes[0].name=azure-config" \
+            --set "extraVolumes[0].secret.secretName=azure-config-file" \
+            --set "extraVolumeMounts[0].name=azure-config" \
+            --set "extraVolumeMounts[0].mountPath=/etc/kubernetes" \
+            --set "extraVolumeMounts[0].readOnly=true" \
             --wait --timeout 5m
 
       # ── 3. cert-manager ──────────────────────────────────────────

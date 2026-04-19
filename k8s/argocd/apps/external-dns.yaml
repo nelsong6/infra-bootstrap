@@ -20,9 +20,6 @@ spec:
           - gateway-grpcroute
           - gateway-tcproute
           - gateway-tlsroute
-        extraArgs:
-          - --azure-resource-group=infra
-          - --azure-subscription-id=aee0cbd2-8074-4001-b610-0f8edb4eaa3c
         serviceAccount:
           annotations:
             azure.workload.identity/client-id: 44b0ff37-b886-4101-ab19-23388ead9c0b
@@ -30,6 +27,14 @@ spec:
           azure.workload.identity/use: "true"
         domainFilters:
           - romaine.life
+        extraVolumes:
+          - name: azure-config
+            secret:
+              secretName: azure-config-file
+        extraVolumeMounts:
+          - name: azure-config
+            mountPath: /etc/kubernetes
+            readOnly: true
   destination:
     server: https://kubernetes.default.svc
     namespace: external-dns
