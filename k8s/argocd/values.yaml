@@ -11,13 +11,6 @@ configs:
   # Enable Kustomize Helm chart inflation
   cm:
     kustomize.buildOptions: --enable-helm
-    resource.exclusions: |
-      - apiGroups:
-          - generators.external-secrets.io
-        kinds:
-          - "*"
-        clusters:
-          - "*"
     url: https://argocd.romaine.life
     dex.config: |
       connectors:
