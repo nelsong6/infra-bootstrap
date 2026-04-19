@@ -7,6 +7,25 @@ global:
   logging:
     level: warn
 
+configs:
+  # OIDC config — Microsoft Entra ID
+  cm:
+    url: https://argocd.romaine.life
+    oidc.config: |
+      name: Microsoft
+      issuer: https://login.microsoftonline.com/2236b5e4-81d2-4d82-bde5-17b1037999ea/v2.0
+      clientID: $argocd-oidc:client-id
+      clientSecret: $argocd-oidc:client-secret
+      requestedScopes:
+        - openid
+        - profile
+        - email
+  # RBAC — personal tenant, only one user, default to admin
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      g, cf57d57d-1411-4f59-b517-e9a8600b140a, role:admin
+
 # Single replica — personal infra, no HA needed
 controller:
   replicas: 1
@@ -23,7 +42,7 @@ repoServer:
 redis:
   enabled: true
 
-# Disable dex (use ArgoCD's built-in auth)
+# Disable dex (using ArgoCD's built-in OIDC)
 dex:
   enabled: false
 

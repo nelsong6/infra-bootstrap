@@ -279,6 +279,21 @@ jobs:
             --namespace argocd \
             argocd.argoproj.io/secret-type=repository
 
+      # ── ArgoCD OIDC secret ───────────────────────────────────────
+      # Sync Entra OIDC credentials from Key Vault to the argocd-oidc
+      # K8s secret. ArgoCD reads $argocd-oidc:client-id and
+      # $argocd-oidc:client-secret from this secret.
+      - name: Sync ArgoCD OIDC credentials
+        if: steps.aks.outputs.exists == 'true'
+        run: |
+          CLIENT_ID=$(az keyvault secret show --vault-name romaine-kv --name argocd-oidc-client-id --query value -o tsv)
+          CLIENT_SECRET=$(az keyvault secret show --vault-name romaine-kv --name argocd-oidc-client-secret --query value -o tsv)
+          kubectl create secret generic argocd-oidc \
+            --namespace argocd \
+            --from-literal=client-id="$CLIENT_ID" \
+            --from-literal=client-secret="$CLIENT_SECRET" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       # ── Prereqs for ArgoCD apps ──────────────────────────────────
       # ExternalDNS needs an azure.json config for workload identity.
       # This secret can't live in git (has subscription-specific config)

@@ -56,6 +56,50 @@ resource "azurerm_key_vault_secret" "microsoft_oauth_client_secret" {
 }
 
 # ============================================================================
+# ArgoCD OIDC (server-side auth code flow)
+# ============================================================================
+# Dedicated app registration for ArgoCD SSO. Uses the authorization code
+# flow with a client secret — separate from the SPA social login app above.
+
+resource "azuread_application" "argocd" {
+  display_name     = "ArgoCD"
+  sign_in_audience = "AzureADandPersonalMicrosoftAccount"
+
+  api {
+    requested_access_token_version = 2
+  }
+
+  web {
+    redirect_uris = [
+      "https://argocd.romaine.life/auth/callback",
+    ]
+  }
+
+  optional_claims {
+    id_token {
+      name = "email"
+    }
+  }
+}
+
+resource "azuread_application_password" "argocd" {
+  application_id = azuread_application.argocd.id
+  display_name   = "argocd-oidc"
+}
+
+resource "azurerm_key_vault_secret" "argocd_oidc_client_id" {
+  name         = "argocd-oidc-client-id"
+  value        = azuread_application.argocd.client_id
+  key_vault_id = data.azurerm_key_vault.main.id
+}
+
+resource "azurerm_key_vault_secret" "argocd_oidc_client_secret" {
+  name         = "argocd-oidc-client-secret"
+  value        = azuread_application_password.argocd.value
+  key_vault_id = data.azurerm_key_vault.main.id
+}
+
+# ============================================================================
 # Google "Sign in with Google" (shared across all projects)
 # ============================================================================
 # Google OAuth credentials are created manually via the GCP Console and stored
