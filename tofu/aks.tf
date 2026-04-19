@@ -68,6 +68,19 @@ resource "azurerm_federated_identity_credential" "shared_workload" {
   subject             = "system:serviceaccount:default:infra-shared"
 }
 
+# Per-app federated credentials — each app on AKS runs under a ServiceAccount
+# named `infra-shared` in its own namespace. These creds let those pods
+# assume infra-shared-identity (Cosmos/App Config/Key Vault/Storage roles).
+resource "azurerm_federated_identity_credential" "shared_workload_app" {
+  for_each            = local.k8s_apps
+  name                = "aks-shared-workload-${each.key}"
+  resource_group_name = data.azurerm_resource_group.main.name
+  parent_id           = azurerm_user_assigned_identity.shared.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject             = "system:serviceaccount:${each.key}:infra-shared"
+}
+
 # ExternalDNS — manages DNS records in Azure DNS from Gateway/HTTPRoute resources
 resource "azurerm_federated_identity_credential" "external_dns" {
   name                = "aks-external-dns"

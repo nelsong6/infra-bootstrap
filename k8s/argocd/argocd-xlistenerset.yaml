@@ -1,0 +1,25 @@
+# ArgoCD's HTTPS listener. Attaches to the shared `main` Gateway in
+# envoy-gateway-system via cross-namespace XListenerSet. Same pattern used
+# by app namespaces (investing, etc.) — argocd uses it too for consistency.
+apiVersion: gateway.networking.x-k8s.io/v1alpha1
+kind: XListenerSet
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  parentRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: main
+    namespace: envoy-gateway-system
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: argocd.romaine.life
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: argocd-tls

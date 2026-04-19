@@ -1,0 +1,12 @@
+# Values for the gateway-helm dependency chart. Overrides under the chart's
+# name (`gateway-helm`) as required by Helm's subchart value-scoping rules.
+gateway-helm:
+  config:
+    envoyGateway:
+      # Enable the experimental XListenerSet API so apps can declare their
+      # own HTTPS listeners in their own namespaces and attach to the shared
+      # `main` Gateway cross-namespace. Without this flag the controller
+      # ignores XListenerSet resources.
+      gatewayAPI:
+        enabled:
+          - XListenerSet

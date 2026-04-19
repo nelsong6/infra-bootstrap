@@ -9,5 +9,5 @@ helmCharts:
     valuesFile: values.yaml
 resources:
   - argocd-cert.yaml
+  - argocd-xlistenerset.yaml
   - argocd-route.yaml
-  - argocd-reference-grant.yaml

@@ -154,6 +154,12 @@ resource "azurerm_role_assignment" "nelson_storage" {
 
 locals {
   ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker"])
+
+  # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
+  # push images) and wires a federated credential to the shared managed
+  # identity for `system:serviceaccount:<app>:infra-shared`. Expand as each
+  # app migrates off the shared api onto its own K8s Deployment.
+  k8s_apps = toset(["investing"])
   app_default_branch = {
     "fzt" = "main"
   }

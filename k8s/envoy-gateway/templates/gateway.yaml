@@ -1,10 +1,12 @@
-# Shared Gateway for all apps.
-# Envoy Gateway watches this and provisions an envoy proxy with a
-# LoadBalancer service. HTTPRoute resources reference this gateway
-# to route traffic to their backends.
+# Shared Gateway. Platform-team-owned: controls port/protocol exposure and
+# which namespaces may contribute listeners. Apps do NOT add listeners here —
+# each app defines its own XListenerSet in its own namespace (experimental
+# Gateway API feature, gateway.networking.x-k8s.io/v1alpha1) that attaches
+# to this Gateway cross-namespace.
 #
-# Each app adds a listener here for its hostname + TLS cert,
-# and an HTTPRoute pointing to its backend service.
+# The port-80 HTTP listener stays on this Gateway because cert-manager's
+# letsencrypt-prod ClusterIssuer solves HTTP-01 challenges via a temporary
+# HTTPRoute parented to this Gateway.
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -12,24 +14,13 @@ metadata:
   namespace: envoy-gateway-system
 spec:
   gatewayClassName: eg
+  allowedListeners:
+    namespaces:
+      from: All
   listeners:
     - name: http
       protocol: HTTP
       port: 80
-      allowedRoutes:
-        namespaces:
-          from: All
-    - name: argocd-https
-      protocol: HTTPS
-      port: 443
-      hostname: argocd.romaine.life
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - group: ""
-            kind: Secret
-            name: argocd-tls
-            namespace: argocd
       allowedRoutes:
         namespaces:
           from: All
