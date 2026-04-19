@@ -241,11 +241,37 @@ jobs:
             echo "### Bootstrap skipped — AKS cluster not found" >> $GITHUB_STEP_SUMMARY
           fi
 
-      # ── 1. Envoy Gateway ──────────────────────────────────────────
-      - name: Install Envoy Gateway
+      # ── Helper: check Helm release ─────────────────────────────────
+      # Returns "deployed", "failed", or "none". If failed, uninstalls
+      # the broken release + namespace so the install step retries clean.
+      - name: Check Helm releases
+        id: helm
         if: steps.aks.outputs.exists == 'true'
         run: |
-          helm upgrade --install eg oci://docker.io/envoyproxy/gateway-helm \
+          check_release() {
+            local name=$1 ns=$2
+            STATUS=$(helm status "$name" -n "$ns" -o json 2>/dev/null | jq -r '.info.status // empty')
+            if [ "$STATUS" = "deployed" ]; then
+              echo "skip"
+            elif [ "$STATUS" = "failed" ]; then
+              echo "Cleaning up failed release $name in $ns" >&2
+              helm uninstall "$name" -n "$ns" 2>/dev/null || true
+              kubectl delete namespace "$ns" --ignore-not-found 2>/dev/null || true
+              echo "install"
+            else
+              echo "install"
+            fi
+          }
+          echo "eg=$(check_release eg envoy-gateway-system)" >> $GITHUB_OUTPUT
+          echo "external_dns=$(check_release external-dns external-dns)" >> $GITHUB_OUTPUT
+          echo "cert_manager=$(check_release cert-manager cert-manager)" >> $GITHUB_OUTPUT
+          echo "argocd=$(check_release argocd argocd)" >> $GITHUB_OUTPUT
+
+      # ── 1. Envoy Gateway ──────────────────────────────────────────
+      - name: Install Envoy Gateway
+        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.eg == 'install'
+        run: |
+          helm install eg oci://docker.io/envoyproxy/gateway-helm \
             --version v1.3.2 \
             --namespace envoy-gateway-system \
             --create-namespace \
@@ -258,7 +284,7 @@ jobs:
 
       # ── 2. ExternalDNS ─────────────────────────────────────────────
       - name: Install ExternalDNS
-        if: steps.aks.outputs.exists == 'true'
+        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.external_dns == 'install'
         run: |
           CLIENT_ID=$(az identity show \
             --resource-group infra --name infra-shared-identity \
@@ -266,7 +292,7 @@ jobs:
 
           helm repo add external-dns https://kubernetes-sigs.github.io/external-dns
           helm repo update
-          helm upgrade --install external-dns external-dns/external-dns \
+          helm install external-dns external-dns/external-dns \
             --namespace external-dns \
             --create-namespace \
             --set provider.name=azure \
@@ -282,11 +308,11 @@ jobs:
 
       # ── 3. cert-manager ──────────────────────────────────────────
       - name: Install cert-manager
-        if: steps.aks.outputs.exists == 'true'
+        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.cert_manager == 'install'
         run: |
           helm repo add jetstack https://charts.jetstack.io
           helm repo update
-          helm upgrade --install cert-manager jetstack/cert-manager \
+          helm install cert-manager jetstack/cert-manager \
             --namespace cert-manager \
             --create-namespace \
             --set crds.install=true \
@@ -300,18 +326,18 @@ jobs:
 
       # ── 4. ArgoCD ────────────────────────────────────────────────
       - name: Install ArgoCD
-        if: steps.aks.outputs.exists == 'true'
+        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.argocd == 'install'
         run: |
           helm repo add argo https://argoproj.github.io/argo-helm
           helm repo update
-          helm upgrade --install argocd argo/argo-cd \
+          helm install argocd argo/argo-cd \
             --namespace argocd \
             --create-namespace \
             --values k8s/argocd/values.yaml \
             --wait --timeout 5m
 
       - name: Configure private repo access
-        if: steps.aks.outputs.exists == 'true'
+        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.argocd == 'install'
         run: |
           GITHUB_PAT=$(az keyvault secret show --vault-name romaine-kv --name github-pat --query value -o tsv)
           kubectl create secret generic infra-bootstrap-repo \
@@ -319,12 +345,10 @@ jobs:
             --from-literal=type=git \
             --from-literal=url=https://github.com/nelsong6/infra-bootstrap.git \
             --from-literal=password="$GITHUB_PAT" \
-            --from-literal=username=nelsong6 \
-            --dry-run=client -o yaml | kubectl apply -f -
+            --from-literal=username=nelsong6
           kubectl label secret infra-bootstrap-repo \
             --namespace argocd \
-            argocd.argoproj.io/secret-type=repository \
-            --overwrite
+            argocd.argoproj.io/secret-type=repository
 
       - name: Apply manifests
         if: steps.aks.outputs.exists == 'true'
@@ -339,9 +363,9 @@ jobs:
         run: |
           echo "### Cluster Bootstrap Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Action |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          for ns in envoy-gateway-system external-dns cert-manager argocd; do
-            STATUS=$(helm status -n $ns $(helm list -n $ns -q | head -1) 2>/dev/null | grep STATUS | awk '{print $2}')
-            echo "| $ns | ${STATUS:-unknown} |" >> $GITHUB_STEP_SUMMARY
-          done
+          echo "| Envoy Gateway | ${{ steps.helm.outputs.eg == 'skip' && '✅ deployed' || '🆕 installed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ExternalDNS | ${{ steps.helm.outputs.external_dns == 'skip' && '✅ deployed' || '🆕 installed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| cert-manager | ${{ steps.helm.outputs.cert_manager == 'skip' && '✅ deployed' || '🆕 installed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ArgoCD | ${{ steps.helm.outputs.argocd == 'skip' && '✅ deployed' || '🆕 installed' }} |" >> $GITHUB_STEP_SUMMARY
