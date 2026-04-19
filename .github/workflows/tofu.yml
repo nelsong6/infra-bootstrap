@@ -253,11 +253,6 @@ jobs:
             STATUS=$(helm status "$name" -n "$ns" -o json 2>/dev/null | jq -r '.info.status // empty')
             if [ "$STATUS" = "deployed" ]; then
               echo "skip"
-            elif [ "$STATUS" = "failed" ]; then
-              echo "Cleaning up failed release $name in $ns" >&2
-              helm uninstall "$name" -n "$ns" >/dev/null 2>&1 || true
-              kubectl delete namespace "$ns" --ignore-not-found >/dev/null 2>&1 || true
-              echo "install"
             else
               echo "install"
             fi
@@ -271,7 +266,7 @@ jobs:
       - name: Install Envoy Gateway
         if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.eg == 'install'
         run: |
-          helm install eg oci://docker.io/envoyproxy/gateway-helm \
+          helm upgrade --install eg oci://docker.io/envoyproxy/gateway-helm \
             --version v1.3.2 \
             --namespace envoy-gateway-system \
             --create-namespace \
@@ -292,7 +287,7 @@ jobs:
 
           helm repo add external-dns https://kubernetes-sigs.github.io/external-dns
           helm repo update
-          helm install external-dns external-dns/external-dns \
+          helm upgrade --install external-dns external-dns/external-dns \
             --namespace external-dns \
             --create-namespace \
             --set provider.name=azure \
@@ -312,7 +307,7 @@ jobs:
         run: |
           helm repo add jetstack https://charts.jetstack.io
           helm repo update
-          helm install cert-manager jetstack/cert-manager \
+          helm upgrade --install cert-manager jetstack/cert-manager \
             --namespace cert-manager \
             --create-namespace \
             --set crds.install=true \
@@ -330,7 +325,7 @@ jobs:
         run: |
           helm repo add argo https://argoproj.github.io/argo-helm
           helm repo update
-          helm install argocd argo/argo-cd \
+          helm upgrade --install argocd argo/argo-cd \
             --namespace argocd \
             --create-namespace \
             --values k8s/argocd/values.yaml \
