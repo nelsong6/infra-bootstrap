@@ -26,6 +26,7 @@ configs:
               - openid
               - profile
               - email
+              - user.read
   # RBAC — default readonly, map admin by email
   rbac:
     policy.default: role:readonly
