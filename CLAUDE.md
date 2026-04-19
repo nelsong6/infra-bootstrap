@@ -63,6 +63,5 @@ Dex with Microsoft connector (`tenant: common`, any Microsoft account). Scopes: 
 
 ## Infrastructure Pattern (Legacy)
 
-- Container App Environment (`infra-aca`) — still running, apps migrating to AKS (#23)
 - Static Web Apps — being replaced by Envoy Gateway ingress
 - Shared API pattern — being replaced by per-app K8s deployments (#24)
