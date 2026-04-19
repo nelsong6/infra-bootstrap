@@ -18,10 +18,11 @@ spec:
           oidc-issuer-url: https://login.microsoftonline.com/common/v2.0
           insecure-oidc-skip-issuer-verification: "true"
           scope: "openid profile email"
-          upstream: "http://argocd-server.argocd.svc.cluster.local:80"
+          upstream: "static://200"
           cookie-secure: "true"
           email-domain: "*"
           redirect-url: "https://argocd.romaine.life/oauth2/callback"
+          set-xauthrequest: "true"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
