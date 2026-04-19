@@ -335,6 +335,7 @@ jobs:
         if: steps.aks.outputs.exists == 'true' && steps.argocd.outputs.status == 'install'
         run: |
           kubectl apply -f k8s/apps/
+          kubectl apply -f k8s/root-app.yaml
 
       # ── Summary ──────────────────────────────────────────────────
       - name: Bootstrap summary
