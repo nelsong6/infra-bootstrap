@@ -241,103 +241,21 @@ jobs:
             echo "### Bootstrap skipped — AKS cluster not found" >> $GITHUB_STEP_SUMMARY
           fi
 
-      # ── Helper: check Helm release ─────────────────────────────────
-      # Returns "deployed", "failed", or "none". If failed, uninstalls
-      # the broken release + namespace so the install step retries clean.
-      - name: Check Helm releases
-        id: helm
+      # ── Check ArgoCD ───────────────────────────────────────────────
+      - name: Check ArgoCD
+        id: argocd
         if: steps.aks.outputs.exists == 'true'
         run: |
-          check_release() {
-            local name=$1 ns=$2
-            STATUS=$(helm status "$name" -n "$ns" -o json 2>/dev/null | jq -r '.info.status // empty')
-            if [ "$STATUS" = "deployed" ]; then
-              echo "skip"
-            else
-              echo "install"
-            fi
-          }
-          echo "eg=$(check_release eg envoy-gateway-system)" >> $GITHUB_OUTPUT
-          echo "external_dns=$(check_release external-dns external-dns)" >> $GITHUB_OUTPUT
-          echo "cert_manager=$(check_release cert-manager cert-manager)" >> $GITHUB_OUTPUT
-          echo "argocd=$(check_release argocd argocd)" >> $GITHUB_OUTPUT
+          STATUS=$(helm status argocd -n argocd -o json 2>/dev/null | jq -r '.info.status // empty')
+          if [ "$STATUS" = "deployed" ]; then
+            echo "status=deployed" >> $GITHUB_OUTPUT
+          else
+            echo "status=install" >> $GITHUB_OUTPUT
+          fi
 
-      # ── 1. Envoy Gateway ──────────────────────────────────────────
-      - name: Install Envoy Gateway
-        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.eg == 'install'
-        run: |
-          helm upgrade --install eg oci://docker.io/envoyproxy/gateway-helm \
-            --version v1.3.2 \
-            --namespace envoy-gateway-system \
-            --create-namespace \
-            --wait --timeout 5m
-
-      - name: Apply Gateway resource
-        if: steps.aks.outputs.exists == 'true'
-        run: |
-          kubectl apply -f k8s/bootstrap/gateway.yaml
-
-      # ── 2. ExternalDNS ─────────────────────────────────────────────
-      - name: Install ExternalDNS
-        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.external_dns == 'install'
-        run: |
-          CLIENT_ID=$(az identity show \
-            --resource-group infra --name infra-shared-identity \
-            --query clientId -o tsv)
-
-          kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f -
-
-          # Azure config for workload identity — ExternalDNS reads this
-          # instead of using CLI flags for Azure auth
-          kubectl create secret generic azure-config-file \
-            --namespace external-dns \
-            --from-literal=azure.json="{
-              \"tenantId\": \"${{ vars.ARM_TENANT_ID }}\",
-              \"subscriptionId\": \"${{ vars.ARM_SUBSCRIPTION_ID }}\",
-              \"resourceGroup\": \"infra\",
-              \"useWorkloadIdentityExtension\": true
-            }" \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-          helm repo add external-dns https://kubernetes-sigs.github.io/external-dns
-          helm repo update
-          helm upgrade --install external-dns external-dns/external-dns \
-            --namespace external-dns \
-            --set provider.name=azure \
-            --set txtOwnerId=infra-aks \
-            --set policy=sync \
-            --set "sources={gateway-httproute,gateway-grpcroute,gateway-tcproute,gateway-tlsroute}" \
-            --set "serviceAccount.annotations.azure\.workload\.identity/client-id=$CLIENT_ID" \
-            --set-string "podLabels.azure\.workload\.identity/use=true" \
-            --set "domainFilters[0]=romaine.life" \
-            --set "extraVolumes[0].name=azure-config" \
-            --set "extraVolumes[0].secret.secretName=azure-config-file" \
-            --set "extraVolumeMounts[0].name=azure-config" \
-            --set "extraVolumeMounts[0].mountPath=/etc/kubernetes" \
-            --set "extraVolumeMounts[0].readOnly=true" \
-            --wait --timeout 5m
-
-      # ── 3. cert-manager ──────────────────────────────────────────
-      - name: Install cert-manager
-        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.cert_manager == 'install'
-        run: |
-          helm repo add jetstack https://charts.jetstack.io
-          helm repo update
-          helm upgrade --install cert-manager jetstack/cert-manager \
-            --namespace cert-manager \
-            --create-namespace \
-            --set installCRDs=true \
-            --set featureGates="ExperimentalGatewayAPISupport=true" \
-            --wait --timeout 5m
-
-      - name: Apply ClusterIssuer
-        if: steps.aks.outputs.exists == 'true'
-        run: |
-          kubectl apply -f k8s/bootstrap/cluster-issuer.yaml
-
-      # ── 4. ArgoCD ────────────────────────────────────────────────
+      # ── Install ArgoCD ───────────────────────────────────────────
       - name: Install ArgoCD
-        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.argocd == 'install'
+        if: steps.aks.outputs.exists == 'true' && steps.argocd.outputs.status == 'install'
         run: |
           helm repo add argo https://argoproj.github.io/argo-helm
           helm repo update
@@ -348,7 +266,7 @@ jobs:
             --wait --timeout 5m
 
       - name: Configure private repo access
-        if: steps.aks.outputs.exists == 'true' && steps.helm.outputs.argocd == 'install'
+        if: steps.aks.outputs.exists == 'true' && steps.argocd.outputs.status == 'install'
         run: |
           GITHUB_PAT=$(az keyvault secret show --vault-name romaine-kv --name github-pat --query value -o tsv)
           kubectl create secret generic infra-bootstrap-repo \
@@ -361,12 +279,34 @@ jobs:
             --namespace argocd \
             argocd.argoproj.io/secret-type=repository
 
-      - name: Apply manifests
+      # ── Prereqs for ArgoCD apps ──────────────────────────────────
+      # ExternalDNS needs an azure.json config for workload identity.
+      # This secret can't live in git (has subscription-specific config)
+      # so we create it here before ArgoCD deploys ExternalDNS.
+      - name: Create ExternalDNS Azure config
         if: steps.aks.outputs.exists == 'true'
         run: |
+          kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic azure-config-file \
+            --namespace external-dns \
+            --from-literal=azure.json="{
+              \"tenantId\": \"${{ vars.ARM_TENANT_ID }}\",
+              \"subscriptionId\": \"${{ vars.ARM_SUBSCRIPTION_ID }}\",
+              \"resourceGroup\": \"infra\",
+              \"useWorkloadIdentityExtension\": true
+            }" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # ── Hand off to ArgoCD ───────────────────────────────────────
+      # Apply all Application manifests — ArgoCD auto-syncs each one.
+      # Everything else (Envoy Gateway, ExternalDNS, cert-manager,
+      # Gateway resource, ClusterIssuer, certs, routes) is managed
+      # by ArgoCD via these apps. Single source of truth.
+      - name: Apply ArgoCD apps
+        if: steps.aks.outputs.exists == 'true'
+        run: |
+          kubectl apply -f k8s/argocd/apps/
           kubectl apply -f k8s/argocd/root-app.yaml
-          kubectl apply -f k8s/bootstrap/argocd-cert.yaml
-          kubectl apply -f k8s/bootstrap/argocd-route.yaml
 
       # ── Summary ──────────────────────────────────────────────────
       - name: Bootstrap summary
@@ -374,9 +314,13 @@ jobs:
         run: |
           echo "### Cluster Bootstrap Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Action |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Envoy Gateway | ${{ steps.helm.outputs.eg == 'skip' && '✅ deployed' || '🆕 installed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| ExternalDNS | ${{ steps.helm.outputs.external_dns == 'skip' && '✅ deployed' || '🆕 installed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| cert-manager | ${{ steps.helm.outputs.cert_manager == 'skip' && '✅ deployed' || '🆕 installed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| ArgoCD | ${{ steps.helm.outputs.argocd == 'skip' && '✅ deployed' || '🆕 installed' }} |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.argocd.outputs.status }}" = "install" ]; then
+            echo "🆕 ArgoCD installed and apps applied. Components deploying via ArgoCD." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔑 Get ArgoCD admin password:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ ArgoCD already deployed. Apps re-applied." >> $GITHUB_STEP_SUMMARY
+          fi
