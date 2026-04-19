@@ -255,8 +255,8 @@ jobs:
               echo "skip"
             elif [ "$STATUS" = "failed" ]; then
               echo "Cleaning up failed release $name in $ns" >&2
-              helm uninstall "$name" -n "$ns" 2>/dev/null || true
-              kubectl delete namespace "$ns" --ignore-not-found 2>/dev/null || true
+              helm uninstall "$name" -n "$ns" >/dev/null 2>&1 || true
+              kubectl delete namespace "$ns" --ignore-not-found >/dev/null 2>&1 || true
               echo "install"
             else
               echo "install"
