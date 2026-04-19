@@ -22,11 +22,12 @@ configs:
             clientSecret: $dex.microsoft.clientSecret
             redirectURI: https://argocd.romaine.life/api/dex/callback
             tenant: common
-  # RBAC — default readonly, Nelson gets admin
+  # RBAC — default readonly, map admin by email
   rbac:
     policy.default: role:readonly
+    scopes: '[email]'
     policy.csv: |
-      g, cf57d57d-1411-4f59-b517-e9a8600b140a, role:admin
+      g, fullnelsongrip@gmail.com, role:admin
 
 # Single replica — personal infra, no HA needed
 controller:
