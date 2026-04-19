@@ -12,10 +12,21 @@ configs:
   cm:
     kustomize.buildOptions: --enable-helm
     url: https://argocd.romaine.life
-    # Auth handled by oauth2-proxy — no built-in OIDC needed
-  # RBAC — oauth2-proxy gates access, ArgoCD defaults to admin
+    dex.config: |
+      connectors:
+        - type: microsoft
+          id: microsoft
+          name: Microsoft
+          config:
+            clientID: $dex.microsoft.clientID
+            clientSecret: $dex.microsoft.clientSecret
+            redirectURI: https://argocd.romaine.life/api/dex/callback
+            tenant: common
+  # RBAC — default readonly, Nelson gets admin
   rbac:
-    policy.default: role:admin
+    policy.default: role:readonly
+    policy.csv: |
+      g, cf57d57d-1411-4f59-b517-e9a8600b140a, role:admin
 
 # Single replica — personal infra, no HA needed
 controller:
@@ -33,9 +44,9 @@ repoServer:
 redis:
   enabled: true
 
-# Disable dex (auth handled by oauth2-proxy)
+# Dex handles SSO — supports multiple identity providers
 dex:
-  enabled: false
+  enabled: true
 
 # Disable notifications (can enable later)
 notifications:

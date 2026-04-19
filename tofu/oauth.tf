@@ -71,8 +71,7 @@ resource "azuread_application" "argocd" {
 
   web {
     redirect_uris = [
-      "https://argocd.romaine.life/auth/callback",
-      "https://argocd.romaine.life/oauth2/callback",
+      "https://argocd.romaine.life/api/dex/callback",
     ]
   }
 

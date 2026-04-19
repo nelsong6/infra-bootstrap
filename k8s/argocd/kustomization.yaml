@@ -11,4 +11,3 @@ resources:
   - argocd-cert.yaml
   - argocd-route.yaml
   - argocd-reference-grant.yaml
-  - oauth2-proxy-secret.yaml
