@@ -326,7 +326,7 @@ jobs:
           helm upgrade --install cert-manager jetstack/cert-manager \
             --namespace cert-manager \
             --create-namespace \
-            --set crds.install=true \
+            --set installCRDs=true \
             --set featureGates="ExperimentalGatewayAPISupport=true" \
             --wait --timeout 5m
 

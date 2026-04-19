@@ -11,8 +11,7 @@ spec:
     targetRevision: v1.*
     helm:
       values: |
-        crds:
-          install: true
+        installCRDs: true
         featureGates: "ExperimentalGatewayAPISupport=true"
   destination:
     server: https://kubernetes.default.svc
