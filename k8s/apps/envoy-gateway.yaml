@@ -9,6 +9,8 @@ spec:
     repoURL: https://github.com/nelsong6/infra-bootstrap.git
     targetRevision: main
     path: k8s/envoy-gateway
+    helm:
+      releaseName: eg
   destination:
     server: https://kubernetes.default.svc
     namespace: envoy-gateway-system
