@@ -14,14 +14,18 @@ configs:
     url: https://argocd.romaine.life
     dex.config: |
       connectors:
-        - type: microsoft
+        - type: oidc
           id: microsoft
           name: Microsoft
           config:
+            issuer: https://login.microsoftonline.com/common/v2.0
             clientID: $dex.microsoft.clientID
             clientSecret: $dex.microsoft.clientSecret
             redirectURI: https://argocd.romaine.life/api/dex/callback
-            tenant: common
+            insecureSkipEmailVerified: true
+            getUserInfo: true
+            claimMapping:
+              email: preferred_username
   # RBAC — default readonly, map admin by email
   rbac:
     policy.default: role:readonly
