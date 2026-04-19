@@ -14,8 +14,8 @@ configs:
     oidc.config: |
       name: Microsoft
       issuer: https://login.microsoftonline.com/2236b5e4-81d2-4d82-bde5-17b1037999ea/v2.0
-      clientID: $argocd-oidc:client-id
-      clientSecret: $argocd-oidc:client-secret
+      clientID: $oidc.clientId
+      clientSecret: $oidc.clientSecret
       requestedScopes:
         - openid
         - profile
