@@ -36,7 +36,7 @@ spec:
             value: /oauth2
       backendRefs:
         - name: oauth2-proxy
-          port: 4180
+          port: 80
 ---
 # SecurityPolicy: external auth check via oauth2-proxy.
 # Envoy calls oauth2-proxy on every request to verify the session.
@@ -55,7 +55,7 @@ spec:
     http:
       backendRefs:
         - name: oauth2-proxy
-          port: 4180
+          port: 80
       path: /oauth2/auth
       headersToBackend:
         - x-auth-request-user
