@@ -14,5 +14,5 @@ spec:
     - argocd.romaine.life
   rules:
     - backendRefs:
-        - name: oauth2-proxy
-          port: 4180
+        - name: argocd-server
+          port: 80
