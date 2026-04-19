@@ -9,7 +9,6 @@ spec:
   parentRefs:
     - name: main
       namespace: envoy-gateway-system
-      sectionName: argocd-https
   hostnames:
     - argocd.romaine.life
   rules:
