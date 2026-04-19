@@ -296,7 +296,7 @@ jobs:
             --set "extraArgs[0]=--azure-resource-group=infra" \
             --set "extraArgs[1]=--azure-subscription-id=${{ vars.ARM_SUBSCRIPTION_ID }}" \
             --set "serviceAccount.annotations.azure\.workload\.identity/client-id=$CLIENT_ID" \
-            --set "podLabels.azure\.workload\.identity/use=true" \
+            --set-string "podLabels.azure\.workload\.identity/use=true" \
             --set "domainFilters[0]=romaine.life" \
             --wait --timeout 5m
 
