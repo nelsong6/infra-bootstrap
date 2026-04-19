@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: external-dns
+    repoURL: https://kubernetes-sigs.github.io/external-dns
+    targetRevision: 1.*
+    helm:
+      values: |
+        provider:
+          name: azure
+        txtOwnerId: infra-aks
+        policy: sync
+        sources:
+          - gateway-httproute
+          - gateway-grpcroute
+          - gateway-tcproute
+          - gateway-tlsroute
+        extraArgs:
+          - --azure-resource-group=infra
+          - --azure-subscription-id=aee0cbd2-8074-4001-b610-0f8edb4eaa3c
+        serviceAccount:
+          annotations:
+            azure.workload.identity/client-id: 44b0ff37-b886-4101-ab19-23388ead9c0b
+        podLabels:
+          azure.workload.identity/use: "true"
+        domainFilters:
+          - romaine.life
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

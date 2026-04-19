@@ -1,7 +1,7 @@
 # App-of-apps root Application.
-# ArgoCD watches k8s/argocd/apps/ for Application manifests and
-# auto-syncs them. Each file in that directory defines a component
-# (ingress-nginx, cert-manager, external-secrets, external-dns, etc.).
+# ArgoCD watches k8s/argocd/apps/ for Application manifests.
+# Auto-sync is OFF — Nelson manually syncs new apps after reviewing.
+# Individual apps within the directory have their own auto-sync enabled.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -17,7 +17,4 @@ spec:
     path: k8s/argocd/apps
   destination:
     server: https://kubernetes.default.svc
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+  syncPolicy: {}
