@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-runners
+  namespace: argocd
+  annotations:
+    # Wave 1: runners come up after the controller (wave 0) is healthy.
+    # Without this, the scale-set chart fails because AutoscalingRunnerSet
+    # CRD from the controller hasn't been installed yet.
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nelsong6/infra-bootstrap.git
+    targetRevision: main
+    path: k8s/arc-runners
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
