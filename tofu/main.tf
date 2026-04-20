@@ -140,13 +140,13 @@ resource "azurerm_role_assignment" "nelson_storage" {
 }
 
 locals {
-  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop"])
+  ci_only_apps = toset(["ambience", "fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop"])
 
   # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
   # push images) and wires a federated credential to the shared managed
   # identity for `system:serviceaccount:<app>:infra-shared`. Expand as each
   # app migrates off the shared api onto its own K8s Deployment.
-  k8s_apps = toset(["investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer"])
+  k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer"])
   app_default_branch = {
     "fzt" = "main"
   }
@@ -161,6 +161,14 @@ locals {
 import {
   to = module.app["fzt"].github_repository.repo
   id = "fzt"
+}
+
+# ambience: pre-existing repo created manually during the initial AKS
+# bring-up. Bringing into tofu so CI federated creds + AcrPush get managed
+# alongside the other k8s_apps.
+import {
+  to = module.app["ambience"].github_repository.repo
+  id = "ambience"
 }
 
 # The following repos were created outside infra-bootstrap (fzt-frontend and
@@ -213,6 +221,7 @@ moved {
 module "app" {
   source   = "./app"
   for_each = toset([
+    "ambience",
     "api",
     "bender-world",
     "diagrams",
