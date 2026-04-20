@@ -140,7 +140,7 @@ resource "azurerm_role_assignment" "nelson_storage" {
 }
 
 locals {
-  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker"])
+  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop"])
 
   # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
   # push images) and wires a federated credential to the shared managed
@@ -151,6 +151,7 @@ locals {
     "fzt" = "main"
   }
   app_topics = {
+    "fzt-desktop"  = ["fzt-downstream"]
     "fzt-showcase" = ["fzt-downstream"]
     "my-homepage"  = ["fzt-downstream"]
   }
@@ -219,6 +220,7 @@ module "app" {
     "fzt",
     "fzt-automate",
     "fzt-browser",
+    "fzt-desktop",
     "fzt-frontend",
     "fzt-picker",
     "fzt-showcase",
