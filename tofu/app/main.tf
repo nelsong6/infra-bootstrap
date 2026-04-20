@@ -114,14 +114,6 @@ resource "github_repository" "repo" {
       }
     }
   }
-
-  # Archive state is managed out-of-band (`gh repo archive` / the GitHub
-  # UI), not by this module. Ignore drift so an archived repo (e.g. api,
-  # archived 2026-04-20 after its K8s migration) doesn't get un-archived
-  # on the next apply.
-  lifecycle {
-    ignore_changes = [archived]
-  }
 }
 
 # Per-app Azure AD application + service principal

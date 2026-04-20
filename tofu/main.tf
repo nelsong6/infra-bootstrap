@@ -222,7 +222,6 @@ module "app" {
   source   = "./app"
   for_each = toset([
     "ambience",
-    "api",
     "bender-world",
     "diagrams",
     "eight-queens",
