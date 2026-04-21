@@ -1,21 +1,15 @@
 # ============================================================================
-# New serverless Cosmos DB account (replacing infra-cosmos)
+# Shared serverless Cosmos DB account
 # ============================================================================
-# The existing `infra-cosmos` account is provisioned Standard with free tier
-# enabled. That model made sense when the plan was one shared-throughput DB,
-# but the app tofus ended up with no throughput declared, so Azure defaulted
-# every container to a dedicated 400 RU/s offer. Twelve dedicated offers ran
-# the bill up to ~$100/mo for essentially idle personal apps.
+# Replaces the previous provisioned free-tier `infra-cosmos` account (torn
+# down 2026-04-20). The old account had apps' tofus declaring DBs with no
+# throughput specified, which caused Azure to default every container to a
+# dedicated 400 RU/s offer — twelve idle offers ran the bill to ~$100/mo.
 #
-# Serverless is a better fit: pay-per-request, no idle floor, no per-container
-# cost. Serverless is mutually exclusive with both free tier and provisioned
-# throughput, so a new account is required (accounts cannot be converted
-# in-place between the two offer flavours).
-#
-# During migration both accounts live side by side. The `shared_identity`
-# principal gets data-contributor on both, and `cosmos_db_endpoint` in App
-# Configuration still points at the old account. Data copy runs, then App
-# Config flips, then the old account is torn out.
+# Serverless fits the actual usage pattern: pay-per-request, no idle floor,
+# no per-container cost. It is mutually exclusive with free tier and with
+# provisioned throughput at any scope, so a new account was required —
+# accounts cannot be converted in-place between the offer flavours.
 
 resource "azurerm_cosmosdb_account" "serverless" {
   name                = "infra-cosmos-serverless"
@@ -56,11 +50,3 @@ resource "azurerm_cosmosdb_sql_role_assignment" "shared_identity_cosmos_serverle
   scope               = azurerm_cosmosdb_account.serverless.id
 }
 
-# Surface the new endpoint as its own App Config key so the migration script
-# can read both endpoints from one place. `cosmos_db_endpoint` (unqualified)
-# stays pointed at the old account until apps are verified on the new one.
-resource "azurerm_app_configuration_key" "cosmos_db_endpoint_serverless" {
-  configuration_store_id = azurerm_app_configuration.main.id
-  key                    = "cosmos_db_endpoint_serverless"
-  value                  = azurerm_cosmosdb_account.serverless.endpoint
-}

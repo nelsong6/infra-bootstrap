@@ -43,12 +43,12 @@ output "dns_zone_id" {
 # ============================================================================
 
 output "cosmos_db_account_name" {
-  value       = azurerm_cosmosdb_account.main.name
+  value       = azurerm_cosmosdb_account.serverless.name
   description = "Name of the shared Cosmos DB account"
 }
 
 output "cosmos_db_account_id" {
-  value       = azurerm_cosmosdb_account.main.id
+  value       = azurerm_cosmosdb_account.serverless.id
   description = "Resource ID of the shared Cosmos DB account"
 }
 

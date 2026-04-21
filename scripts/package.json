@@ -1,0 +1,8 @@
+{
+  "name": "infra-bootstrap-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@azure/cosmos": "^4.2.0"
+  }
+}
