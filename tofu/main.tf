@@ -74,7 +74,7 @@ resource "azurerm_app_configuration" "main" {
 resource "azurerm_app_configuration_key" "cosmos_db_endpoint" {
   configuration_store_id = azurerm_app_configuration.main.id
   key                    = "cosmos_db_endpoint"
-  value                  = azurerm_cosmosdb_account.main.endpoint
+  value                  = azurerm_cosmosdb_account.serverless.endpoint
 }
 
 resource "azurerm_app_configuration_key" "auth0_domain" {
