@@ -1,10 +1,7 @@
-# ArgoCD Application for ambience — first app on the per-app K8s deployment
-# pattern (infra-bootstrap#24). Source manifests live in the ambience repo
-# under k8s/, keeping the app's infra with the app.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ambience
+  name: ambience-dev
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -16,14 +13,11 @@ spec:
     path: chart/ambience
     helm:
       valueFiles:
-        - values-prod.yaml
+        - values-dev.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: ambience
+    namespace: ambience-dev
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
