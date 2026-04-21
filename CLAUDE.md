@@ -56,12 +56,12 @@ Dex with Microsoft connector (`tenant: common`, any Microsoft account). Scopes: 
 ## Related Repos
 
 - **infra-bootstrap** (this repo) — root infrastructure + cluster platform
-- **api** — shared always-on backend (migrating to per-app K8s deployments, tracked by #24)
-- **my-homepage**, **kill-me**, **bender-world**, **eight-queens**, **plant-agent**, **fzt-showcase** — app repos
-- **diagrams** — interactive architecture documentation site at `diagrams.romaine.life`
+- **my-homepage**, **kill-me**, **plant-agent**, **investing**, **house-hunt**, **fzt-frontend**, **diagrams**, **llm-explorer**, **ambience** — apps on AKS (each namespace + Deployment + HTTPRoute)
+- **bender-world**, **eight-queens**, **lights**, **fzt-showcase**, **landing-page** — frontend-only SWAs (intentional, kept as SWAs)
 - **pipeline-templates** — reusable GitHub Actions workflows
 
-## Infrastructure Pattern (Legacy)
+## Historical Notes
 
-- Static Web Apps — being replaced by Envoy Gateway ingress
-- Shared API pattern — being replaced by per-app K8s deployments (#24)
+- The shared `api` repo hosted every app's backend routes until 2026-04-20; each app now owns its own K8s Deployment with inline routes. api repo is archived.
+- Static Web Apps used to be the default hosting; apps that need backends migrated to AKS. SWAs remain for intentionally frontend-only apps.
+- The shared Container App Environment (`infra-aca`) was decommissioned 2026-04-20 — all apps moved to AKS.
