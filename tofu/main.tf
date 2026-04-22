@@ -120,6 +120,22 @@ locals {
   app_pages_branch = {}
 }
 
+resource "random_password" "card_utility_stats_vm_admin" {
+  length           = 32
+  special          = true
+  override_special = "!@#$%^&*-_=+?"
+  min_lower        = 1
+  min_upper        = 1
+  min_numeric      = 1
+  min_special      = 1
+}
+
+resource "azurerm_key_vault_secret" "card_utility_stats_vm_admin_password" {
+  name         = "card-utility-stats-vm-admin-password"
+  key_vault_id = data.azurerm_key_vault.main.id
+  value        = random_password.card_utility_stats_vm_admin.result
+}
+
 import {
   to = module.app["fzt"].github_repository.repo
   id = "fzt"
@@ -165,6 +181,11 @@ import {
   id = "llm-explorer"
 }
 
+import {
+  to = module.app["card-utility-stats"].github_repository.repo
+  id = "card-utility-stats"
+}
+
 moved {
   from = module.app["fuzzy-tiered"]
   to   = module.app["fzt"]
@@ -185,6 +206,7 @@ module "app" {
   for_each = toset([
     "ambience",
     "bender-world",
+    "card-utility-stats",
     "diagrams",
     "eight-queens",
     "fzt",
