@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: tofu-${{ github.ref }}
+  group: opentofu-infra-bootstrap.tfstate
   cancel-in-progress: false
 
 permissions:

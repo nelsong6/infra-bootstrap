@@ -88,10 +88,10 @@ resource "azurerm_role_assignment" "appconfig_data_owner" {
   principal_id         = var.principal_id
 }
 
-# Storage Blob Data Reader (subscription scope)
-resource "azurerm_role_assignment" "storage_blob_reader" {
+# Storage Blob Data Contributor (subscription scope)
+resource "azurerm_role_assignment" "storage_blob_contributor" {
   scope                = "/subscriptions/${var.arm_subscription_id}"
-  role_definition_name = "Storage Blob Data Reader"
+  role_definition_name = "Storage Blob Data Contributor"
   principal_id         = var.principal_id
 }
 
