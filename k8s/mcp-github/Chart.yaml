@@ -1,0 +1,4 @@
+apiVersion: v2
+name: mcp-github
+version: 0.1.0
+description: Custom GitHub MCP server — Entra OAuth in front, shared GitHub App install behind.

@@ -179,3 +179,13 @@ output "mcp_azure_managed_identity_client_id" {
   description = "Workload identity client ID for the azure MCP server pod."
 }
 
+output "mcp_github_resource_application_id" {
+  value       = module.mcp_github.resource_application_id
+  description = "Entra client ID of the github MCP server's resource app."
+}
+
+output "mcp_github_managed_identity_client_id" {
+  value       = module.mcp_github.managed_identity_client_id
+  description = "Workload identity client ID for the github MCP server pod."
+}
+

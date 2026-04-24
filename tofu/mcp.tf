@@ -100,6 +100,34 @@ module "mcp_azure" {
 }
 
 # ----------------------------------------------------------------------------
+# Per-server: github
+# ----------------------------------------------------------------------------
+# Custom-written MCP server (code lives in nelsong6/mcp-github, built and
+# pushed to romainecr). The server validates Entra-issued tokens itself and
+# calls GitHub using the pre-existing GitHub App creds already in KV
+# (github-app-id / github-app-installation-id / github-app-private-key) —
+# "install once, shared" model. No OBO to Azure, so the module's
+# ARM-access / OBO-federated-credential resources go unused but inert.
+# role_assignments stays empty: Azure RBAC isn't the access gate here;
+# the GitHub App's repo selection is.
+
+module "mcp_github" {
+  source = "./mcp-server"
+
+  name                         = "github"
+  resource_group_name          = data.azurerm_resource_group.main.name
+  resource_group_location      = data.azurerm_resource_group.main.location
+  key_vault_id                 = data.azurerm_key_vault.main.id
+  aks_oidc_issuer_url          = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  aks_namespace                = "mcp-github"
+  aks_service_account_name     = "mcp-github"
+  claude_client_application_id = azuread_application.mcp_client.object_id
+  claude_client_client_id      = azuread_application.mcp_client.client_id
+
+  role_assignments = {}
+}
+
+# ----------------------------------------------------------------------------
 # DNS — per-host A records point at the Envoy Gateway's public IP.
 # ----------------------------------------------------------------------------
 # ExternalDNS manages records driven by HTTPRoute resources, so we don't

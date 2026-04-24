@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-github
+  namespace: mcp-github
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-github
+  template:
+    metadata:
+      labels:
+        app: mcp-github
+    spec:
+      serviceAccountName: mcp-github
+      containers:
+        - name: mcp-github
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+          envFrom:
+            - secretRef:
+                name: mcp-github-config
+          env:
+            # Authority URL — the server builds the expected issuer from
+            # this + ENTRA_TENANT_ID for JWT validation.
+            - name: ENTRA_INSTANCE
+              value: https://login.microsoftonline.com/
+          readinessProbe:
+            httpGet:
+              path: /.well-known/oauth-protected-resource
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
