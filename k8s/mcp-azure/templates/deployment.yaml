@@ -44,15 +44,20 @@ spec:
             # reach — the readiness probe and Service couldn't connect).
             - name: ASPNETCORE_URLS
               value: http://+:{{ .Values.containerPort }}
+            # Honor X-Forwarded-Proto from Envoy so the OAuth metadata document
+            # advertises https:// resource URLs (default is the http:// scheme
+            # observed at the container, which clients won't accept).
+            - name: AZURE_MCP_DANGEROUSLY_ENABLE_FORWARDED_HEADERS
+              value: "true"
             # Azure workload-identity projects the SA token here by default
             # when the pod carries the `azure.workload.identity/use` label.
             - name: AZURE_FEDERATED_TOKEN_FILE
               value: /var/run/secrets/azure/tokens/azure-identity-token
             - name: AZURE_AUTHORITY_HOST
               value: https://login.microsoftonline.com/
-            # azure-mcp-specific: auth authority URL (separate from
-            # AZURE_AUTHORITY_HOST used by WorkloadIdentityCredential).
-            - name: AZURE_AD_INSTANCE
+            # ASP.NET Core hierarchical config — completes the AzureAd__*
+            # block sourced from the ExternalSecret.
+            - name: AzureAd__Instance
               value: https://login.microsoftonline.com/
           readinessProbe:
             httpGet:
