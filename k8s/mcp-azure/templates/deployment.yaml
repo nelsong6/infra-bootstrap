@@ -39,6 +39,11 @@ spec:
             - secretRef:
                 name: mcp-azure-config
           env:
+            # Bind ASP.NET Core on all interfaces and our chosen port (default
+            # is http://localhost:5000, which only the container's loopback can
+            # reach — the readiness probe and Service couldn't connect).
+            - name: ASPNETCORE_URLS
+              value: http://+:{{ .Values.containerPort }}
             # Azure workload-identity projects the SA token here by default
             # when the pod carries the `azure.workload.identity/use` label.
             - name: AZURE_FEDERATED_TOKEN_FILE
