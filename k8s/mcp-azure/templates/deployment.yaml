@@ -22,13 +22,14 @@ spec:
         - name: azure-mcp
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          # HTTP transport ships only in the Docker image; see
-          # docs/azmcp-commands.md.
+          # The image entrypoint is already `./server-binary server start` — args
+          # only override flags. HTTP transport ships only in the Docker image
+          # (see docs/azmcp-commands.md). UseOnBehalfOf wires OBO outgoing auth.
           args:
-            - server
-            - start
             - --transport
             - http
+            - --outgoing-auth-strategy
+            - UseOnBehalfOf
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
