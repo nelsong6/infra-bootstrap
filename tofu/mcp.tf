@@ -58,6 +58,15 @@ resource "azurerm_key_vault_secret" "mcp_client_id" {
   key_vault_id = data.azurerm_key_vault.main.id
 }
 
+# Tenant ID — not a secret, but syncing it via KV means MCP ExternalSecrets
+# can pull it alongside the per-server IDs without anything having to know
+# tenant specifics statically.
+resource "azurerm_key_vault_secret" "mcp_tenant_id" {
+  name         = "mcp-tenant-id"
+  value        = data.azurerm_client_config.current.tenant_id
+  key_vault_id = data.azurerm_key_vault.main.id
+}
+
 # ----------------------------------------------------------------------------
 # Per-server: azure
 # ----------------------------------------------------------------------------

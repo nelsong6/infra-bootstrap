@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: mcp-azure
+        # Triggers the Azure workload-identity webhook to project the SA
+        # token; env var injection is intentionally skipped — we set the
+        # Azure env vars ourselves from the ExternalSecret.
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: mcp-azure
@@ -19,8 +22,8 @@ spec:
         - name: azure-mcp
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          # HTTP transport is only built into the Docker distribution; see
-          # docs/azmcp-commands.md. Flags mirror the azmcp-obo-template.
+          # HTTP transport ships only in the Docker image; see
+          # docs/azmcp-commands.md.
           args:
             - server
             - start
@@ -29,22 +32,22 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
+          envFrom:
+            # AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_AD_* — synced from
+            # Key Vault by the ExternalSecret.
+            - secretRef:
+                name: mcp-azure-config
           env:
-            # JWT validation — azure-mcp expects tokens with this audience and
-            # issued by this tenant.
-            - name: AZURE_AD_TENANT_ID
-              value: {{ .Values.oauth.tenantId | quote }}
-            - name: AZURE_AD_CLIENT_ID
-              value: {{ .Values.oauth.audience | quote }}
+            # Azure workload-identity projects the SA token here by default
+            # when the pod carries the `azure.workload.identity/use` label.
+            - name: AZURE_FEDERATED_TOKEN_FILE
+              value: /var/run/secrets/azure/tokens/azure-identity-token
+            - name: AZURE_AUTHORITY_HOST
+              value: https://login.microsoftonline.com/
+            # azure-mcp-specific: auth authority URL (separate from
+            # AZURE_AUTHORITY_HOST used by WorkloadIdentityCredential).
             - name: AZURE_AD_INSTANCE
-              value: "https://login.microsoftonline.com/"
-            # Workload identity projects these by default via the webhook —
-            # declared explicitly for clarity; DefaultAzureCredential picks
-            # them up for the OBO federated-assertion exchange.
-            - name: AZURE_CLIENT_ID
-              value: {{ .Values.serviceAccount.workloadIdentityClientId | quote }}
-            - name: AZURE_TENANT_ID
-              value: {{ .Values.oauth.tenantId | quote }}
+              value: https://login.microsoftonline.com/
           readinessProbe:
             httpGet:
               path: /.well-known/oauth-protected-resource
