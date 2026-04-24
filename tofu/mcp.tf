@@ -69,13 +69,13 @@ resource "azurerm_key_vault_secret" "mcp_client_id" {
 module "mcp_azure" {
   source = "./mcp-server"
 
-  name                       = "azure"
-  resource_group_name        = data.azurerm_resource_group.main.name
-  resource_group_location    = data.azurerm_resource_group.main.location
-  key_vault_id               = data.azurerm_key_vault.main.id
-  aks_oidc_issuer_url        = azurerm_kubernetes_cluster.main.oidc_issuer_url
-  aks_namespace              = "mcp-azure"
-  aks_service_account_name   = "mcp-azure"
+  name                         = "azure"
+  resource_group_name          = data.azurerm_resource_group.main.name
+  resource_group_location      = data.azurerm_resource_group.main.location
+  key_vault_id                 = data.azurerm_key_vault.main.id
+  aks_oidc_issuer_url          = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  aks_namespace                = "mcp-azure"
+  aks_service_account_name     = "mcp-azure"
   claude_client_application_id = azuread_application.mcp_client.object_id
   claude_client_client_id      = azuread_application.mcp_client.client_id
 
