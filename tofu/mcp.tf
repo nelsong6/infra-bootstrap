@@ -88,15 +88,18 @@ module "mcp_azure" {
   claude_client_application_id = azuread_application.mcp_client.object_id
   claude_client_client_id      = azuread_application.mcp_client.client_id
 
-  # Populate with user/group object IDs and the desired scope once ready:
-  #   role_assignments = {
-  #     "nelson-reader" = {
-  #       scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
-  #       role_definition_name = "Reader"
-  #       principal_id         = "<nelson's object id or a group's object id>"
-  #     }
-  #   }
-  role_assignments = {}
+  # OBO grants: each entry adds Azure RBAC for a user/group on the listed
+  # scope. Without at least one entry, every Azure call after OBO 403s.
+  # Keep this minimal — Reader on the subscription gives every read tool
+  # azure-mcp ships, with no write paths. Promote to a group + named role
+  # later if more than one user needs access.
+  role_assignments = {
+    "nelson-reader" = {
+      scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+      role_definition_name = "Reader"
+      principal_id         = "cf57d57d-1411-4f59-b517-e9a8600b140a" # nelson-devops-project@outlook.com
+    }
+  }
 }
 
 # ----------------------------------------------------------------------------
