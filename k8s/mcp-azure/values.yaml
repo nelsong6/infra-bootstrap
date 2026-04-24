@@ -1,0 +1,43 @@
+# ============================================================================
+# mcp-azure values
+# ============================================================================
+# These IDs are minted by `tofu/mcp.tf` and `tofu/mcp-server/`. After the
+# first `tofu apply` (or whenever the identity / resource app is recreated),
+# update the values below from `tofu output` and commit.
+#
+# Look for:
+#   mcp_azure_managed_identity_client_id  →  serviceAccount.workloadIdentityClientId
+#   mcp_azure_resource_application_id     →  oauth.audience
+#   arm_tenant_id                         →  oauth.tenantId
+# ============================================================================
+
+image:
+  # Pin to a specific tag once verified — :latest is fine for initial bring-up.
+  repository: mcr.microsoft.com/azure-sdk/azure-mcp
+  tag: latest
+  pullPolicy: IfNotPresent
+
+hostname: azure.mcp.romaine.life
+
+# Port the container's HTTP transport listens on. azure-mcp defaults to 8080
+# in its container entrypoint; override here if that changes.
+containerPort: 8080
+
+oauth:
+  # Tenant ID (GUID). Populate from `tofu output arm_tenant_id`.
+  tenantId: "__REPLACE_WITH_TENANT_ID__"
+  # Resource app client ID (GUID). Populate from
+  # `tofu output mcp_azure_resource_application_id`.
+  audience: "__REPLACE_WITH_RESOURCE_APP_CLIENT_ID__"
+
+serviceAccount:
+  # MI client ID (GUID). Populate from
+  # `tofu output mcp_azure_managed_identity_client_id`.
+  workloadIdentityClientId: "__REPLACE_WITH_MI_CLIENT_ID__"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
