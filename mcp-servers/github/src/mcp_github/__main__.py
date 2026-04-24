@@ -48,7 +48,10 @@ def build_app(config: Config) -> Starlette:
         body = {
             "resource": f"{request.url.scheme}://{request.url.netloc}",
             "authorization_servers": [config.issuer],
-            "scopes_supported": ["Mcp.Tools.ReadWrite"],
+            # Entra delegated-permission scopes are namespaced by the resource
+            # app's client ID — clients need the full string to request the
+            # right scope via the OAuth flow.
+            "scopes_supported": [f"{config.entra_audience}/Mcp.Tools.ReadWrite"],
             "bearer_methods_supported": ["header"],
         }
         return Response(json.dumps(body), media_type="application/json")
@@ -77,7 +80,16 @@ def main() -> None:
     import uvicorn
 
     config = Config()
-    uvicorn.run(build_app(config), host="0.0.0.0", port=config.port)
+    # proxy_headers + permissive forwarded_allow_ips so Uvicorn rewrites
+    # request.url.scheme from X-Forwarded-Proto. Envoy terminates TLS, so
+    # without this the OAuth metadata advertises http://.
+    uvicorn.run(
+        build_app(config),
+        host="0.0.0.0",
+        port=config.port,
+        proxy_headers=True,
+        forwarded_allow_ips="*",
+    )
 
 
 if __name__ == "__main__":

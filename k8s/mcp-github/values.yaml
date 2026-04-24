@@ -8,7 +8,10 @@
 image:
   repository: romainecr.azurecr.io/mcp-github
   tag: latest
-  pullPolicy: IfNotPresent
+  # Always so `kubectl rollout restart` after a new :latest push fetches the
+  # fresh image. Switch to a SHA tag + Image Updater later if drift becomes
+  # a problem.
+  pullPolicy: Always
 
 hostname: github.mcp.romaine.life
 
