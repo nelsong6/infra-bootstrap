@@ -1,4 +1,0 @@
-apiVersion: v2
-name: mcp-azure
-version: 0.1.0
-description: Azure MCP Server deployment (Microsoft azure-mcp in HTTP mode, OAuth via Entra ID with OBO).
