@@ -8,7 +8,10 @@
 image:
   repository: romainecr.azurecr.io/mcp-github
   tag: latest
-  pullPolicy: IfNotPresent
+  # Always pull because we use :latest — IfNotPresent serves cached
+  # layers from before this iteration's teardown/resurrection. Move to
+  # a SHA-pinned tag once a bumper job lands.
+  pullPolicy: Always
 
 # Loopback-only port the Python uvicorn server listens on.
 upstreamPort: 8080
