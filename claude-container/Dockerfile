@@ -17,6 +17,7 @@ RUN apk add --no-cache \
         git \
         github-cli \
         gnupg \
+        icu-libs \
         jq \
         less \
         py3-pip \
