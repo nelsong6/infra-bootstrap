@@ -76,10 +76,18 @@ spec:
           args:
             - --insecure-listen-address=0.0.0.0:{{ .Values.proxy.port }}
             - --upstream=http://127.0.0.1:{{ .Values.upstreamPort }}/
-            - --logtostderr=true
+            - --config-file=/etc/kube-rbac-proxy/config.yaml
             - --v=2
           ports:
             - name: proxy
               containerPort: {{ .Values.proxy.port }}
+          volumeMounts:
+            - name: proxy-config
+              mountPath: /etc/kube-rbac-proxy
+              readOnly: true
           resources:
             {{- toYaml .Values.proxyResources | nindent 12 }}
+      volumes:
+        - name: proxy-config
+          configMap:
+            name: kube-rbac-proxy
