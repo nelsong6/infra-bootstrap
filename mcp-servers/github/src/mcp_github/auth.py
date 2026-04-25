@@ -3,28 +3,6 @@ from threading import Lock
 
 import httpx
 import jwt
-from jwt import PyJWKClient
-
-from .config import Config
-
-
-class EntraJWTValidator:
-    """Validates Entra-issued bearer tokens (audience + issuer + JWKS sig)."""
-
-    def __init__(self, config: Config) -> None:
-        self._config = config
-        self._jwks = PyJWKClient(config.jwks_uri, cache_keys=True)
-
-    def validate(self, token: str) -> dict:
-        signing_key = self._jwks.get_signing_key_from_jwt(token).key
-        return jwt.decode(
-            token,
-            signing_key,
-            algorithms=["RS256"],
-            audience=self._config.entra_audience,
-            issuer=self._config.issuer,
-            options={"require": ["exp", "iss", "aud", "sub"]},
-        )
 
 
 class GitHubAppTokenMinter:
