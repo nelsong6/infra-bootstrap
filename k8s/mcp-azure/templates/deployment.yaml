@@ -55,6 +55,16 @@ spec:
             # auth; direct pod-IP:8080 access is the residual exposure.
             - name: ASPNETCORE_URLS
               value: http://+:{{ .Values.upstreamPort }}
+            # Required when --dangerously-disable-http-incoming-auth is set
+            # AND ASPNETCORE_URLS uses a wildcard host. Without it, the
+            # server throws synchronously during host construction (in
+            # InitializeListingUrls, before logging is wired up) and the
+            # container exits silently with code 1.
+            #
+            # See ServiceStartCommand.cs InitializeListingUrls at
+            # https://github.com/microsoft/mcp/blob/main/core/Microsoft.Mcp.Core/src/Areas/Server/Commands/ServiceStartCommand.cs
+            - name: ALLOW_INSECURE_EXTERNAL_BINDING
+              value: "true"
             # Path the WI webhook projects the federated token to.
             - name: AZURE_FEDERATED_TOKEN_FILE
               value: /var/run/secrets/azure/tokens/azure-identity-token
