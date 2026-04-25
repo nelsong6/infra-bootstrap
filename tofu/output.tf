@@ -160,32 +160,3 @@ output "shared_identity_client_id" {
   description = "Client ID of the shared managed identity (used for workload identity annotations on K8s service accounts)"
 }
 
-# ============================================================================
-# MCP Server Outputs
-# ============================================================================
-
-output "mcp_client_application_id" {
-  value       = azuread_application.mcp_client.client_id
-  description = "Entra application (client) ID of the shared Claude MCP client. Users configure this when adding the MCP integration in Claude."
-}
-
-output "mcp_azure_resource_application_id" {
-  value       = module.mcp_azure.resource_application_id
-  description = "Entra client ID of the azure MCP server's resource app. This is the audience (aud claim) of tokens the server validates."
-}
-
-output "mcp_azure_managed_identity_client_id" {
-  value       = module.mcp_azure.managed_identity_client_id
-  description = "Workload identity client ID for the azure MCP server pod."
-}
-
-output "mcp_github_resource_application_id" {
-  value       = module.mcp_github.resource_application_id
-  description = "Entra client ID of the github MCP server's resource app."
-}
-
-output "mcp_github_managed_identity_client_id" {
-  value       = module.mcp_github.managed_identity_client_id
-  description = "Workload identity client ID for the github MCP server pod."
-}
-
