@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "azure": {
+      "command": "azmcp",
+      "args": ["--transport", "stdio"]
+    },
+    "platform": {
+      "command": "platform-mcp"
+    }
+  }
+}
