@@ -108,7 +108,7 @@ locals {
   # push images) and wires a federated credential to the shared managed
   # identity for `system:serviceaccount:<app>:infra-shared`. Expand as each
   # app migrates off the shared api onto its own K8s Deployment.
-  k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer"])
+  k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator"])
   app_default_branch = {
     "fzt" = "main"
   }
@@ -224,6 +224,7 @@ module "app" {
     "llm-explorer",
     "my-homepage",
     "plant-agent",
+    "tank-operator",
   ])
 
   name                       = each.key
