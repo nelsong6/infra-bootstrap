@@ -19,7 +19,10 @@ data:
         resource: servers
         name: azure
         namespace: mcp-azure
-        verb: invoke
+        # verb omitted — kube-rbac-proxy v0.18 auto-maps the HTTP method
+        # (GET → get, POST → create, etc.) and an explicit verb field
+        # here is ignored. ClusterRole grants both verbs that MCP traffic
+        # uses.
 ---
 # Permission to "invoke" the mcp-azure server. ClusterRole because the
 # SAs that need it live in other namespaces (e.g. claude-session in
@@ -33,7 +36,9 @@ rules:
   - apiGroups: ["mcp.tank-operator.io"]
     resources: ["servers"]
     resourceNames: ["azure"]
-    verbs: ["invoke"]
+    # MCP traffic over HTTP is GET (SSE) + POST (JSON-RPC). kube-rbac-proxy
+    # maps each method to the matching K8s RBAC verb.
+    verbs: ["get", "create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
