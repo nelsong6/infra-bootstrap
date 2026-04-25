@@ -1,7 +1,3 @@
-# Microsoft's azure-mcp image — we extract /app and invoke the binary
-# directly in stdio mode so the in-container Claude agent can talk to it.
-FROM mcr.microsoft.com/azure-sdk/azure-mcp AS azmcp-src
-
 FROM node:20-bookworm-slim
 
 ARG TARGETARCH=amd64
@@ -57,12 +53,11 @@ RUN pip install --no-cache-dir --break-system-packages /opt/platform-mcp
 COPY mcp-servers/github /opt/mcp-github
 RUN pip install --no-cache-dir --break-system-packages /opt/mcp-github
 
-# Co-located azure-mcp binary. The upstream image's entrypoint is
-# `./server-binary server start` from /app; we mirror that against the
-# extracted /opt/azure-mcp tree so callers only pass transport flags.
-COPY --from=azmcp-src /app /opt/azure-mcp
-RUN printf '#!/bin/sh\ncd /opt/azure-mcp\nexec ./server-binary server start "$@"\n' > /usr/local/bin/azmcp \
-    && chmod +x /usr/local/bin/azmcp
+# azure-mcp will be re-added once we confirm the upstream image's actual
+# binary path — `mcr.microsoft.com/azure-sdk/azure-mcp` doesn't expose
+# `/app`, contrary to the assumption from the previous session's k8s
+# deployment yaml. Tracked separately; the github + platform MCP servers
+# below are sufficient to start.
 
 # Default MCP wiring for the in-container agent. Lives in /workspace so
 # Claude Code picks it up as project-scope config; also kept at
