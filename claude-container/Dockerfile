@@ -1,43 +1,29 @@
-# Microsoft's azure-mcp image — multi-stage source for the co-located stdio
-# binary. WORKDIR is /mcp-server (verified via `kubectl run` against the
-# upstream image, not /app as the previous k8s deployment comment suggested).
+# Microsoft's azure-mcp image — Alpine/musl-based, multi-stage source for
+# the co-located stdio binary at /mcp-server/server-binary.
 FROM mcr.microsoft.com/azure-sdk/azure-mcp AS azmcp-src
 
-FROM node:20-bookworm-slim
+# Alpine base so the musl-linked azmcp binary loads natively (we tried
+# Debian + side-loaded musl earlier; the right answer is matching libcs).
+FROM node:20-alpine
 
 ARG TARGETARCH=amd64
 ARG KUBECTL_VERSION=v1.31.0
 ARG TOFU_VERSION=1.9.0
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
+        azure-cli \
+        bash \
         ca-certificates \
         curl \
         git \
+        github-cli \
         gnupg \
         jq \
         less \
-        musl \
+        py3-pip \
         python3 \
-        python3-pip \
-        python3-venv \
         unzip \
-        vim \
-    && install -m 0755 -d /etc/apt/keyrings \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-        | gpg --dearmor -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-    && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-        > /etc/apt/sources.list.d/github-cli.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends gh \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
-    && rm -rf /var/lib/apt/lists/*
+        vim
 
 RUN curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl" \
         -o /usr/local/bin/kubectl \
@@ -54,8 +40,8 @@ RUN npm install -g @anthropic-ai/claude-code
 COPY claude-container/platform-mcp /opt/platform-mcp
 RUN pip install --no-cache-dir --break-system-packages /opt/platform-mcp
 
-# mcp-github stdio variant — same nine tools as the HTTP server at
-# github.mcp.romaine.life, no JWT layer (we trust the in-container caller).
+# mcp-github stdio variant — same nine tools as the (now-retired) HTTP
+# server, no JWT layer (we trust the in-container caller).
 COPY mcp-servers/github /opt/mcp-github
 RUN pip install --no-cache-dir --break-system-packages /opt/mcp-github
 
