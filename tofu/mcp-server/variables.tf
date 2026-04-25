@@ -40,6 +40,12 @@ variable "claude_client_client_id" {
   type        = string
 }
 
+variable "additional_pre_authorized_client_ids" {
+  description = "Extra OAuth client app IDs that can obtain tokens for this MCP server's scope without an explicit consent prompt — e.g. Microsoft Azure CLI for personal-MCP scenarios where the operator wants `az account get-access-token` to Just Work."
+  type        = set(string)
+  default     = []
+}
+
 variable "role_assignments" {
   description = "Azure RBAC roles granted to the signed-in user pool via the MCP server's token exchange — applied to this map's scopes. Use an Entra group (via Azure AD RBAC on the group as principal) to restrict who can use the server."
   type = map(object({

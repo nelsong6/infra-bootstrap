@@ -108,6 +108,17 @@ resource "azuread_application_pre_authorized" "claude" {
   permission_ids       = [random_uuid.invoke_scope.result]
 }
 
+# Extra clients (separate resource so adding/removing doesn't churn the
+# claude pre-auth above). Personal-MCP shortcut: lets `az account
+# get-access-token --resource <client-id>` succeed for the operator without
+# a browser consent dialog.
+resource "azuread_application_pre_authorized" "additional" {
+  for_each             = var.additional_pre_authorized_client_ids
+  application_id       = azuread_application.resource.id
+  authorized_client_id = each.value
+  permission_ids       = [random_uuid.invoke_scope.result]
+}
+
 resource "azuread_service_principal" "resource" {
   client_id = azuread_application.resource.client_id
   owners    = [data.azuread_client_config.current.object_id]

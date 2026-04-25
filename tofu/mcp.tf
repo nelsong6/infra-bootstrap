@@ -88,6 +88,14 @@ module "mcp_azure" {
   claude_client_application_id = azuread_application.mcp_client.object_id
   claude_client_client_id      = azuread_application.mcp_client.client_id
 
+  # Personal-MCP shortcut: pre-auth Microsoft Azure CLI so `az account
+  # get-access-token --resource <azure-mcp-client-id>` succeeds without a
+  # browser consent dialog. Lets the operator hit the server with their
+  # already-logged-in az identity from any shell.
+  additional_pre_authorized_client_ids = [
+    "04b07795-8ddb-461a-bbee-02f9e1bf7b46", # Microsoft Azure CLI (well-known)
+  ]
+
   # OBO grants: each entry adds Azure RBAC for a user/group on the listed
   # scope. Without at least one entry, every Azure call after OBO 403s.
   # Keep this minimal — Reader on the subscription gives every read tool
