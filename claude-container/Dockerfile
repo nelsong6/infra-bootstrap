@@ -45,6 +45,9 @@ RUN curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${TOFU_V
 
 RUN npm install -g @anthropic-ai/claude-code
 
+COPY platform-mcp /opt/platform-mcp
+RUN pip install --no-cache-dir --break-system-packages /opt/platform-mcp
+
 WORKDIR /workspace
 
 CMD ["bash"]
