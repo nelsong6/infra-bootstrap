@@ -11,7 +11,6 @@ ARG KUBECTL_VERSION=v1.31.0
 ARG TOFU_VERSION=1.9.0
 
 RUN apk add --no-cache \
-        azure-cli \
         bash \
         ca-certificates \
         curl \
