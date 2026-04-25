@@ -45,9 +45,16 @@ spec:
             - secretRef:
                 name: mcp-azure-config
           env:
-            # Bind loopback only — the sidecar is the public face.
+            # Bind on all pod-local interfaces so the kubelet's tcpSocket
+            # readiness probe (which targets the pod IP) can reach it.
+            # Loopback-only would have been preferable for defense-in-depth
+            # against an attacker who knows the pod IP and bypasses the
+            # Service, but probes can't reach 127.0.0.1 from the kubelet's
+            # network namespace. The Service's only targetPort is the
+            # sidecar (8443), so cluster-internal callers still go through
+            # auth; direct pod-IP:8080 access is the residual exposure.
             - name: ASPNETCORE_URLS
-              value: http://127.0.0.1:{{ .Values.upstreamPort }}
+              value: http://+:{{ .Values.upstreamPort }}
             # Path the WI webhook projects the federated token to.
             - name: AZURE_FEDERATED_TOKEN_FILE
               value: /var/run/secrets/azure/tokens/azure-identity-token
