@@ -4,6 +4,9 @@
       "command": "azmcp",
       "args": ["--transport", "stdio"]
     },
+    "github": {
+      "command": "mcp-github-stdio"
+    },
     "platform": {
       "command": "platform-mcp"
     }

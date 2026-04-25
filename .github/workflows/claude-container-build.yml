@@ -3,7 +3,10 @@ name: Build claude-container image
 on:
   push:
     branches: [main]
-    paths: ['claude-container/**', '.github/workflows/claude-container-build.yml']
+    paths:
+      - 'claude-container/**'
+      - 'mcp-servers/github/**'
+      - '.github/workflows/claude-container-build.yml'
   workflow_dispatch:
 
 concurrency:
@@ -32,10 +35,11 @@ jobs:
         run: az acr login --name romainecr
 
       - name: Build + push
-        working-directory: claude-container
         run: |
           TAG=$(git rev-parse --short HEAD)
-          docker build -t romainecr.azurecr.io/claude-container:$TAG -t romainecr.azurecr.io/claude-container:latest .
+          docker build -f claude-container/Dockerfile \
+            -t romainecr.azurecr.io/claude-container:$TAG \
+            -t romainecr.azurecr.io/claude-container:latest .
           docker push romainecr.azurecr.io/claude-container:$TAG
           docker push romainecr.azurecr.io/claude-container:latest
           echo "### Pushed romainecr.azurecr.io/claude-container:$TAG" >> $GITHUB_STEP_SUMMARY

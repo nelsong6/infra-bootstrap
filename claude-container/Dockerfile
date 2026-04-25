@@ -49,8 +49,13 @@ RUN curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${TOFU_V
 
 RUN npm install -g @anthropic-ai/claude-code
 
-COPY platform-mcp /opt/platform-mcp
+COPY claude-container/platform-mcp /opt/platform-mcp
 RUN pip install --no-cache-dir --break-system-packages /opt/platform-mcp
+
+# mcp-github stdio variant — same nine tools as the HTTP server at
+# github.mcp.romaine.life, no JWT layer (we trust the in-container caller).
+COPY mcp-servers/github /opt/mcp-github
+RUN pip install --no-cache-dir --break-system-packages /opt/mcp-github
 
 # Co-located azure-mcp binary. The upstream image's entrypoint is
 # `./server-binary server start` from /app; we mirror that against the
@@ -62,7 +67,7 @@ RUN printf '#!/bin/sh\ncd /opt/azure-mcp\nexec ./server-binary server start "$@"
 # Default MCP wiring for the in-container agent. Lives in /workspace so
 # Claude Code picks it up as project-scope config; also kept at
 # /opt/claude-container/mcp.json for users who mount their own /workspace.
-COPY mcp.json /opt/claude-container/mcp.json
+COPY claude-container/mcp.json /opt/claude-container/mcp.json
 RUN mkdir -p /workspace && cp /opt/claude-container/mcp.json /workspace/.mcp.json
 
 WORKDIR /workspace
