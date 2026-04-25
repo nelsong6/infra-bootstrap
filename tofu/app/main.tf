@@ -180,7 +180,11 @@ module "web" {
   source   = "./web"
   count    = var.ci_only ? 0 : 1
 
-  repo_name              = var.name
+  # Pass the repo's resource attribute (not the input string) so tofu sees
+  # this submodule's `github_actions_variable` resources as dependent on
+  # the repo's creation. Without this, on a brand-new app's first apply,
+  # the variable POSTs race the repo create and 404.
+  repo_name              = github_repository.repo.name
   principal_id           = azuread_service_principal.app.object_id
   application_id         = azuread_application.app.id
   arm_subscription_id    = var.arm_subscription_id
