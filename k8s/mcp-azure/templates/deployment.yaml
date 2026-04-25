@@ -45,38 +45,27 @@ spec:
             - secretRef:
                 name: mcp-azure-config
           env:
-            # Bind on all pod-local interfaces so the kubelet's tcpSocket
-            # readiness probe (which targets the pod IP) can reach it.
-            # Loopback-only would have been preferable for defense-in-depth
-            # against an attacker who knows the pod IP and bypasses the
-            # Service, but probes can't reach 127.0.0.1 from the kubelet's
-            # network namespace. The Service's only targetPort is the
-            # sidecar (8443), so cluster-internal callers still go through
-            # auth; direct pod-IP:8080 access is the residual exposure.
+            # Loopback-only — defense in depth against any caller who knows
+            # the pod IP and tries to bypass the kube-rbac-proxy by hitting
+            # 8080 directly. The disable-incoming-auth path additionally
+            # rejects wildcard hosts (+, *, 0.0.0.0) regardless of
+            # ALLOW_INSECURE_EXTERNAL_BINDING — see ServiceStartCommand.cs
+            # InitializeListingUrls — so localhost is required, not just
+            # preferable.
             - name: ASPNETCORE_URLS
-              value: http://+:{{ .Values.upstreamPort }}
-            # Required when --dangerously-disable-http-incoming-auth is set
-            # AND ASPNETCORE_URLS uses a wildcard host. Without it, the
-            # server throws synchronously during host construction (in
-            # InitializeListingUrls, before logging is wired up) and the
-            # container exits silently with code 1.
-            #
-            # See ServiceStartCommand.cs InitializeListingUrls at
-            # https://github.com/microsoft/mcp/blob/main/core/Microsoft.Mcp.Core/src/Areas/Server/Commands/ServiceStartCommand.cs
-            - name: ALLOW_INSECURE_EXTERNAL_BINDING
-              value: "true"
+              value: http://localhost:{{ .Values.upstreamPort }}
             # Path the WI webhook projects the federated token to.
             - name: AZURE_FEDERATED_TOKEN_FILE
               value: /var/run/secrets/azure/tokens/azure-identity-token
             - name: AZURE_AUTHORITY_HOST
               value: https://login.microsoftonline.com/
           readinessProbe:
-            # No /healthz on this server. The MCP route is the only mounted
-            # endpoint, and probing it would generate noise. tcpSocket
-            # against the loopback listener is enough to confirm the
-            # process is up.
-            tcpSocket:
-              port: upstream
+            # tcpSocket can't target loopback (probes run from the kubelet's
+            # netns and hit the pod IP). exec runs inside the container so
+            # localhost works. nc -z just checks the listener accepts a
+            # TCP connection — equivalent intent to tcpSocket but reachable.
+            exec:
+              command: ["nc", "-z", "localhost", "{{ .Values.upstreamPort }}"]
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:
