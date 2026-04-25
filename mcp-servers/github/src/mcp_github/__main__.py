@@ -39,7 +39,11 @@ class BearerAuthMiddleware(BaseHTTPMiddleware):
 
 def build_app(config: Config) -> Starlette:
     mcp = FastMCP("github-mcp", stateless_http=True)
-    gh = GitHubClient(GitHubAppTokenMinter(config))
+    gh = GitHubClient(GitHubAppTokenMinter(
+        config.github_app_id,
+        config.github_app_installation_id,
+        config.github_app_private_key,
+    ))
     register_tools(mcp, gh)
 
     validator = EntraJWTValidator(config)

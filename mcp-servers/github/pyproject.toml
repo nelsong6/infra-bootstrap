@@ -21,3 +21,4 @@ packages = ["src/mcp_github"]
 
 [project.scripts]
 mcp-github = "mcp_github.__main__:main"
+mcp-github-stdio = "mcp_github.stdio:main"

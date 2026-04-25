@@ -33,8 +33,10 @@ class GitHubAppTokenMinter:
     Installation tokens are valid for an hour. We refresh when <5 min left.
     """
 
-    def __init__(self, config: Config) -> None:
-        self._config = config
+    def __init__(self, app_id: str, installation_id: str, private_key: str) -> None:
+        self._app_id = app_id
+        self._installation_id = installation_id
+        self._private_key = private_key
         self._lock = Lock()
         self._token: str | None = None
         self._expires_at: float = 0.0
@@ -49,12 +51,12 @@ class GitHubAppTokenMinter:
     def _fetch(self) -> tuple[str, float]:
         now = int(time.time())
         app_jwt = jwt.encode(
-            {"iat": now - 60, "exp": now + 540, "iss": self._config.github_app_id},
-            self._config.github_app_private_key,
+            {"iat": now - 60, "exp": now + 540, "iss": self._app_id},
+            self._private_key,
             algorithm="RS256",
         )
         r = httpx.post(
-            f"https://api.github.com/app/installations/{self._config.github_app_installation_id}/access_tokens",
+            f"https://api.github.com/app/installations/{self._installation_id}/access_tokens",
             headers={
                 "Authorization": f"Bearer {app_jwt}",
                 "Accept": "application/vnd.github+json",
