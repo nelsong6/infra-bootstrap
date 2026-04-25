@@ -1,9 +1,7 @@
-# Microsoft's azure-mcp image — Alpine/musl-based, multi-stage source for
-# the co-located stdio binary at /mcp-server/server-binary.
-FROM mcr.microsoft.com/azure-sdk/azure-mcp AS azmcp-src
-
-# Alpine base so the musl-linked azmcp binary loads natively (we tried
-# Debian + side-loaded musl earlier; the right answer is matching libcs).
+# azure-mcp + github-mcp now run as in-cluster HTTP MCP servers (see
+# k8s/mcp-azure/ and k8s/mcp-github/). The container talks to them over
+# HTTP using the pod's projected SA token as the bearer. No co-located
+# binaries needed — keep this image minimal.
 FROM node:20-alpine
 
 ARG TARGETARCH=amd64
@@ -17,7 +15,6 @@ RUN apk add --no-cache \
         git \
         github-cli \
         gnupg \
-        icu-libs \
         jq \
         less \
         py3-pip \
@@ -40,25 +37,19 @@ RUN npm install -g @anthropic-ai/claude-code
 COPY claude-container/platform-mcp /opt/platform-mcp
 RUN pip install --no-cache-dir --break-system-packages /opt/platform-mcp
 
-# mcp-github stdio variant — same nine tools as the (now-retired) HTTP
-# server, no JWT layer (we trust the in-container caller).
-COPY mcp-servers/github /opt/mcp-github
-RUN pip install --no-cache-dir --break-system-packages /opt/mcp-github
-
-# Co-located azure-mcp binary. Upstream image's WORKDIR is /mcp-server;
-# entrypoint pattern is `./server-binary server start`. We mirror that
-# against the extracted /opt/azure-mcp tree so callers only pass transport
-# flags. Binary is ~142MB self-contained .NET single-file publish.
-COPY --from=azmcp-src /mcp-server /opt/azure-mcp
-RUN printf '#!/bin/sh\ncd /opt/azure-mcp\nexec ./server-binary server start "$@"\n' > /usr/local/bin/azmcp \
-    && chmod +x /usr/local/bin/azmcp
-
 # Default MCP wiring for the in-container agent. Lives in /workspace so
 # Claude Code picks it up as project-scope config; also kept at
 # /opt/claude-container/mcp.json for users who mount their own /workspace.
 COPY claude-container/mcp.json /opt/claude-container/mcp.json
 RUN mkdir -p /workspace && cp /opt/claude-container/mcp.json /workspace/.mcp.json
 
+# Entrypoint reads the SA token at container start and exports
+# MCP_*_BEARER env vars that mcp.json's ${VAR} interpolation
+# substitutes into the Authorization headers.
+COPY claude-container/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 WORKDIR /workspace
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["bash"]

@@ -1,11 +1,11 @@
 {
   "mcpServers": {
     "azure": {
-      "command": "azmcp",
-      "args": ["--transport", "stdio"]
-    },
-    "github": {
-      "command": "mcp-github-stdio"
+      "type": "http",
+      "url": "http://mcp-azure.mcp-azure.svc:80/",
+      "headers": {
+        "Authorization": "Bearer ${MCP_AZURE_BEARER}"
+      }
     },
     "platform": {
       "command": "platform-mcp"
