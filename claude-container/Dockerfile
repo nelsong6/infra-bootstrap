@@ -1,3 +1,8 @@
+# Microsoft's azure-mcp image — multi-stage source for the co-located stdio
+# binary. WORKDIR is /mcp-server (verified via `kubectl run` against the
+# upstream image, not /app as the previous k8s deployment comment suggested).
+FROM mcr.microsoft.com/azure-sdk/azure-mcp AS azmcp-src
+
 FROM node:20-bookworm-slim
 
 ARG TARGETARCH=amd64
@@ -53,11 +58,13 @@ RUN pip install --no-cache-dir --break-system-packages /opt/platform-mcp
 COPY mcp-servers/github /opt/mcp-github
 RUN pip install --no-cache-dir --break-system-packages /opt/mcp-github
 
-# azure-mcp will be re-added once we confirm the upstream image's actual
-# binary path — `mcr.microsoft.com/azure-sdk/azure-mcp` doesn't expose
-# `/app`, contrary to the assumption from the previous session's k8s
-# deployment yaml. Tracked separately; the github + platform MCP servers
-# below are sufficient to start.
+# Co-located azure-mcp binary. Upstream image's WORKDIR is /mcp-server;
+# entrypoint pattern is `./server-binary server start`. We mirror that
+# against the extracted /opt/azure-mcp tree so callers only pass transport
+# flags. Binary is ~142MB self-contained .NET single-file publish.
+COPY --from=azmcp-src /mcp-server /opt/azure-mcp
+RUN printf '#!/bin/sh\ncd /opt/azure-mcp\nexec ./server-binary server start "$@"\n' > /usr/local/bin/azmcp \
+    && chmod +x /usr/local/bin/azmcp
 
 # Default MCP wiring for the in-container agent. Lives in /workspace so
 # Claude Code picks it up as project-scope config; also kept at
