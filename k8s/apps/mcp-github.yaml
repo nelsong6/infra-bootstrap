@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/nelsong6/infra-bootstrap.git
+    repoURL: https://github.com/nelsong6/tank-operator.git
     targetRevision: main
-    path: k8s/mcp-github
+    path: k8s-mcp-github
   destination:
     server: https://kubernetes.default.svc
     namespace: mcp-github
