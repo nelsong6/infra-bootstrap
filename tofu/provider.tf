@@ -39,6 +39,13 @@ provider "azurerm" {
   use_oidc = true
 }
 
+provider "azurerm" {
+  alias = "romaine_life"
+  features {}
+  use_oidc        = true
+  subscription_id = "606a1ca1-5833-4d21-8937-d0fcd97cd0a0"
+}
+
 provider "azuread" {
   use_oidc = true
 }
