@@ -27,6 +27,23 @@ configs:
               - profile
               - email
               - user.read
+        # Federate AKS-issued projected SA tokens. In-cluster MCP servers
+        # mint a SA token with aud=argocd-mcp and exchange it for an ArgoCD
+        # bearer via /api/dex/token (grant_type=token-exchange,
+        # connector_id=aks-sa). No static API tokens leave the cluster.
+        - type: oidc
+          id: aks-sa
+          name: AKS Service Account
+          config:
+            issuer: https://westus2.oic.prod-aks.azure.com/2236b5e4-81d2-4d82-bde5-17b1037999ea/26b44ac4-fc37-4146-bce4-af02fa5dd145/
+            clientID: argocd-mcp
+            clientSecret: unused-public-client
+            scopes:
+              - openid
+            getUserInfo: false
+            insecureSkipEmailVerified: true
+            userIDKey: sub
+            userNameKey: sub
   # RBAC — default readonly, map admin by email
   rbac:
     policy.default: role:readonly
@@ -34,6 +51,14 @@ configs:
     policy.csv: |
       g, nelson-devops-project@outlook.com, role:admin
       g, brenden.owens39@gmail.com, role:admin
+      # mcp-argocd's projected SA token, validated by the aks-sa Dex
+      # connector, surfaces as the OIDC subject below. Read-only for now —
+      # tighten/expand alongside the MCP's tool surface.
+      p, system:serviceaccount:mcp-argocd:mcp-argocd, applications, get, */*, allow
+      p, system:serviceaccount:mcp-argocd:mcp-argocd, applications, sync, */*, allow
+      p, system:serviceaccount:mcp-argocd:mcp-argocd, projects, get, *, allow
+      p, system:serviceaccount:mcp-argocd:mcp-argocd, repositories, get, *, allow
+      p, system:serviceaccount:mcp-argocd:mcp-argocd, clusters, get, *, allow
 
 # Single replica — personal infra, no HA needed
 controller:
