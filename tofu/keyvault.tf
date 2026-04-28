@@ -16,10 +16,10 @@ resource "azurerm_key_vault_secret" "external_dns_azure_config" {
   name         = "external-dns-azure-config"
   key_vault_id = data.azurerm_key_vault.main.id
   value = jsonencode({
-    tenantId                       = data.azurerm_client_config.current.tenant_id
-    subscriptionId                 = data.azurerm_client_config.current.subscription_id
-    resourceGroup                  = data.azurerm_resource_group.main.name
-    useWorkloadIdentityExtension   = true
+    tenantId                     = data.azurerm_client_config.current.tenant_id
+    subscriptionId               = data.azurerm_client_config.current.subscription_id
+    resourceGroup                = data.azurerm_resource_group.main.name
+    useWorkloadIdentityExtension = true
   })
 }
 

@@ -32,7 +32,7 @@ Tofu outputs → Key Vault → ExternalSecrets Operator → K8s Secrets. No manu
 
 ### Bootstrap
 
-The CI workflow (`tofu.yml`) has a bootstrap job that runs once: installs ArgoCD via Kustomize (same definition ArgoCD uses to self-manage), creates repo/registry secrets, and applies the Application manifests. After first run, ArgoCD owns everything.
+The CI workflow (`tofu.yaml`) has a bootstrap job that runs once: installs ArgoCD via Kustomize (same definition ArgoCD uses to self-manage), creates repo/registry secrets, and applies the Application manifests. After first run, ArgoCD owns everything.
 
 ## Cluster Components
 
