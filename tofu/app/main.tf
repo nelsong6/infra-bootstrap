@@ -177,21 +177,21 @@ resource "github_actions_variable" "arm_subscription_id" {
 # ── Web app resources (skipped when ci_only = true) ────────────────
 
 module "web" {
-  source   = "./web"
-  count    = var.ci_only ? 0 : 1
+  source = "./web"
+  count  = var.ci_only ? 0 : 1
 
   # Pass the repo's resource attribute (not the input string) so tofu sees
   # this submodule's `github_actions_variable` resources as dependent on
   # the repo's creation. Without this, on a brand-new app's first apply,
   # the variable POSTs race the repo create and 404.
-  repo_name              = github_repository.repo.name
-  principal_id           = azuread_service_principal.app.object_id
-  application_id         = azuread_application.app.id
-  arm_subscription_id    = var.arm_subscription_id
-  key_vault_id           = var.key_vault_id
-  app_config_id          = var.app_config_id
-  cosmos_account_id      = var.cosmos_account_id
-  cosmos_account_name    = var.cosmos_account_name
+  repo_name                  = github_repository.repo.name
+  principal_id               = azuread_service_principal.app.object_id
+  application_id             = azuread_application.app.id
+  arm_subscription_id        = var.arm_subscription_id
+  key_vault_id               = var.key_vault_id
+  app_config_id              = var.app_config_id
+  cosmos_account_id          = var.cosmos_account_id
+  cosmos_account_name        = var.cosmos_account_name
   cosmos_resource_group_name = var.cosmos_resource_group_name
-  google_client_id       = var.google_client_id
+  google_client_id           = var.google_client_id
 }

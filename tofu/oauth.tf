@@ -33,8 +33,8 @@ resource "azuread_application" "microsoft_login" {
       "https://workout.romaine.life/",
       "https://plants.romaine.life/",
       # SWA bypass URLs (auto-generated, stable)
-      "https://white-sea-0beb0bf1e.7.azurestaticapps.net/",  # homepage
-      "https://nice-sea-09c30861e.2.azurestaticapps.net/",    # workout
+      "https://white-sea-0beb0bf1e.7.azurestaticapps.net/",    # homepage
+      "https://nice-sea-09c30861e.2.azurestaticapps.net/",     # workout
       "https://lemon-island-070f8051e.2.azurestaticapps.net/", # plant-agent
       # Local dev
       "http://localhost:5173/",
