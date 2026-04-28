@@ -36,7 +36,7 @@ The CI workflow (`tofu.yml`) has a bootstrap job that runs once: installs ArgoCD
 
 ## Cluster Components
 
-- **AKS** (`infra-aks`) — Free tier, 1x Standard_B2s_v2, Azure CNI Overlay, workload identity
+- **AKS** (`infra-aks`) — Free tier, 2× Standard_B2s_v2 (4 vCPU total, since 2026-04-26), Azure CNI Overlay, workload identity. The `Recreate` rollout-strategy workaround in tank-operator-owned MCP charts is no longer required for new deployments — surge pods can land on the second node — though the existing declarations are fine to leave in place.
 - **ACR** (`romainecr`) — Basic SKU, AcrPull for kubelet identity
 - **Envoy Gateway** — Gateway API controller + shared Gateway with HTTP/HTTPS listeners
 - **ExternalDNS** — Azure DNS via workload identity, watches HTTPRoute resources
@@ -48,6 +48,10 @@ The CI workflow (`tofu.yml`) has a bootstrap job that runs once: installs ArgoCD
 ## App Onboarding
 
 The app module (`tofu/app/main.tf`) creates per-app: GitHub repo, Azure AD app registration + service principal, OIDC federated credentials, and GitHub Actions variables. Setting `ci_only = true` skips web roles.
+
+## Tofu → workflow wiring
+
+For values produced by tofu that an internal workflow needs (SP client IDs, storage account names, secret URIs), prefer `output "x" { value = ... }` + `tofu output -raw x` at runtime over a `github_actions_variable` resource that pushes the value into Actions vars. State stays the single source of truth, no drift between vars and reality, rotations don't need a tofu re-apply just to push the new value. **Bootstrap caveat:** Tier-0 vars the workflow needs *before* it can `tofu init` — `ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID` — are unavoidable as variables. Beyond those, push to outputs. App repos that can't read state still use GH variables (pragmatic, not aspirational).
 
 ## SSO
 
