@@ -60,7 +60,7 @@ Dex with Microsoft connector (`tenant: common`, any Microsoft account). Scopes: 
 ## Related Repos
 
 - **infra-bootstrap** (this repo) — root infrastructure + cluster platform
-- **my-homepage**, **kill-me**, **plant-agent**, **investing**, **house-hunt**, **fzt-frontend**, **diagrams**, **llm-explorer**, **ambience** — apps on AKS (each namespace + Deployment + HTTPRoute)
+- **my-homepage**, **kill-me**, **plant-agent**, **investing**, **house-hunt**, **fzt-frontend**, **diagrams**, **llm-explorer**, **ambience**, **tank-operator**, **glimmung** — apps on AKS (each namespace + Deployment + HTTPRoute)
 - **bender-world**, **eight-queens**, **lights**, **fzt-showcase**, **landing-page** — frontend-only SWAs (intentional, kept as SWAs)
 - **pipeline-templates** — reusable GitHub Actions workflows
 
