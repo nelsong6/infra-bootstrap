@@ -1,0 +1,7 @@
+# emberstack/reflector mirrors annotated Secrets/ConfigMaps across
+# namespaces. Used to publish tank-operator's claude-oauth-ca and
+# claude-credentials secrets into ambience-issue-* (and other agent)
+# namespaces so in-cluster Jobs can talk to the shared
+# claude-api-proxy without each agent app duplicating the underlying
+# credential plumbing.
+reflector: {}

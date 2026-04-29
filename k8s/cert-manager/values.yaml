@@ -2,6 +2,15 @@ cert-manager:
   installCRDs: false
   config:
     enableGatewayAPI: true
+  # Workload identity for the controller — required by the DNS-01 solver
+  # in letsencrypt-prod-dns01 (azureDNS.managedIdentity.clientID points at
+  # infra-shared-identity). The federated credential mapping the SA to the
+  # UAMI lives in infra-bootstrap/tofu/aks.tf.
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: 44b0ff37-b886-4101-ab19-23388ead9c0b
+  podLabels:
+    azure.workload.identity/use: "true"
   webhook:
     validatingWebhookConfiguration:
       namespaceSelector:
