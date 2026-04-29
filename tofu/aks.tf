@@ -107,3 +107,16 @@ resource "azurerm_role_assignment" "shared_identity_dns" {
   role_definition_name = "DNS Zone Contributor"
   principal_id         = azurerm_user_assigned_identity.shared.principal_id
 }
+
+# cert-manager — issues certificates via DNS-01 against Azure DNS. Reuses the
+# shared identity (already has DNS Zone Contributor); federation ties it to
+# the cert-manager controller's ServiceAccount so wildcard certs (e.g.
+# *.<app>.dev.romaine.life) can be solved without HTTP-01.
+resource "azurerm_federated_identity_credential" "cert_manager" {
+  name                = "aks-cert-manager"
+  resource_group_name = data.azurerm_resource_group.main.name
+  parent_id           = azurerm_user_assigned_identity.shared.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject             = "system:serviceaccount:cert-manager:cert-manager"
+}
