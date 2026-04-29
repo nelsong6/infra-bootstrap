@@ -1,0 +1,29 @@
+# ArgoCD Application for the tank-operator issue-agent ARC runner scale set.
+# Wraps gha-runner-scale-set@0.14.1 — the wrapper chart lives in the
+# tank-operator repo (`k8s-arc-runners/`). Same shape as the planned
+# arc-runners pattern (currently parked as arc-runners.yaml.parked for an
+# org migration); this one isn't org-coupled because it points at a
+# repo-owned wrapper chart.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tank-operator-issue-agents
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nelsong6/tank-operator.git
+    targetRevision: main
+    path: k8s-arc-runners
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners-tank-operator-issue-agents
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
