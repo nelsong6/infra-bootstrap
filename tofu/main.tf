@@ -73,26 +73,24 @@ resource "azurerm_user_assigned_identity" "shared" {
   location            = data.azurerm_resource_group.main.location
 }
 
-# App Configuration Data Reader
-resource "azurerm_role_assignment" "shared_identity_appconfig" {
-  scope                = azurerm_app_configuration.main.id
-  role_definition_name = "App Configuration Data Reader"
-  principal_id         = azurerm_user_assigned_identity.shared.principal_id
-}
-
-# Key Vault Secrets User
+# Key Vault Secrets User — kept for external-secrets, which reads from KV
+# to sync secrets into K8s. Apps no longer reuse this identity (each has
+# its own narrowed KV grants in their per-app tofu), so the role is now
+# narrowly used by exactly one consumer.
 resource "azurerm_role_assignment" "shared_identity_keyvault" {
   scope                = data.azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_user_assigned_identity.shared.principal_id
 }
 
-# Storage Blob Data Contributor (subscription scope — covers any app's storage)
-resource "azurerm_role_assignment" "shared_identity_storage" {
-  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_user_assigned_identity.shared.principal_id
-}
+# DNS Zone Contributor lives in aks.tf alongside the external-dns +
+# cert-manager fed creds. App Configuration Data Reader and Storage Blob
+# Data Contributor used to be assigned here for apps' shared use; both
+# were removed once every app moved to its own per-app identity (see
+# kill-me/tofu/identity.tf, plant-agent/tofu/identity.tf, etc., plus
+# fzt-frontend-identity.tf and llm-explorer-identity.tf in this repo).
+# If a future system service needs either, narrow it to its own
+# identity rather than re-broadening this one.
 
 # Storage Blob Data Contributor for Nelson's personal identity (local dev API)
 resource "azurerm_role_assignment" "nelson_storage" {
@@ -109,23 +107,21 @@ locals {
   # own K8s Deployment.
   k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung"])
 
-  # Subset of k8s_apps whose pods actually federate to infra-shared-identity
-  # via `system:serviceaccount:<app>:infra-shared`. Used only by the per-app
-  # fed cred in aks.tf. Apps left out fall into one of two camps:
-  #   - Pod doesn't bind to SA `infra-shared` at all, so its fed cred is
-  #     dead code (ambience's chart sets no serviceAccountName; tank-operator
-  #     renamed its SA to `tank-operator`; my-homepage's SA is missing the
-  #     `azure.workload.identity/client-id` annotation, so the WI webhook
-  #     never injects the token volume).
-  #   - App has migrated to its own per-app managed identity in its own
-  #     tofu (glimmung — see glimmung/tofu/identity.tf). Keeping it on the
-  #     shared identity would re-grant the cross-app blast radius we're
-  #     trying to retire.
-  # Treat this as a shrinking set: every entry left here represents an app
-  # that hasn't been migrated yet. The shared identity itself
-  # (azurerm_user_assigned_identity.shared) and the for_each below can be
-  # deleted once this is empty.
-  shared_identity_apps = toset(["investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "diagrams", "llm-explorer"])
+  # Subset of k8s_apps whose pods federate to infra-shared-identity via
+  # `system:serviceaccount:<app>:infra-shared`. Empty: every app has
+  # migrated to its own per-app identity (kill-me, investing, house-hunt,
+  # plant-agent, diagrams in their own tofu; fzt-frontend and llm-explorer
+  # in this repo via fzt-frontend-identity.tf / llm-explorer-identity.tf;
+  # glimmung in glimmung/tofu/identity.tf). The convention is fully
+  # retired — adding a new app here re-introduces the cross-app blast
+  # radius we just dismantled. Don't.
+  #
+  # The shared_workload_app for_each in aks.tf renders zero resources
+  # while this is empty. Once we're confident no rollback is needed, the
+  # for_each (and the shared identity itself, azurerm_user_assigned_identity.shared
+  # — currently still used by external-secrets for KV reads and by
+  # external-dns + cert-manager for DNS Zone Contributor) can be deleted.
+  shared_identity_apps = toset([])
   app_default_branch = {
     "fzt" = "main"
   }

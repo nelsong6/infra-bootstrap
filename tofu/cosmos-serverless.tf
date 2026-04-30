@@ -39,14 +39,11 @@ resource "azurerm_cosmosdb_account" "serverless" {
   }
 }
 
-# Cosmos DB Built-in Data Contributor — apps authenticate as the shared
-# managed identity and need read/write on the new account during migration
-# and after the App Config flip.
-resource "azurerm_cosmosdb_sql_role_assignment" "shared_identity_cosmos_serverless" {
-  resource_group_name = data.azurerm_resource_group.main.name
-  account_name        = azurerm_cosmosdb_account.serverless.name
-  role_definition_id  = "${azurerm_cosmosdb_account.serverless.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
-  principal_id        = azurerm_user_assigned_identity.shared.principal_id
-  scope               = azurerm_cosmosdb_account.serverless.id
-}
+# Cosmos data plane role on the shared identity used to be assigned here
+# at *account* scope — every opted-in app could read every other app's
+# data. Removed once every app moved to its own per-app identity with a
+# narrowed `dbs/<name>` scope (kill-me/tofu/identity.tf,
+# plant-agent/tofu/identity.tf, glimmung/tofu/identity.tf, and the rest).
+# Don't re-add this assignment — narrow per-app scopes are the convention
+# now.
 
