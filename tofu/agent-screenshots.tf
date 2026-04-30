@@ -83,3 +83,61 @@ resource "github_actions_variable" "ambience_screenshot_container_url" {
   variable_name = "AGENT_SCREENSHOT_CONTAINER_URL"
   value         = "https://${azurerm_storage_account.agent_screenshots.name}.blob.core.windows.net/${azurerm_storage_container.agent_screenshots_ambience.name}"
 }
+
+# ---------------------------------------------------------------------------
+# Per-app container: glimmung
+# ---------------------------------------------------------------------------
+# Same pattern as ambience — separate container, separate role assignment
+# for glimmung's CI SP, separate Actions vars on the glimmung repo. Lets
+# us reap glimmung's screenshots independently and keeps the per-app blast
+# radius narrow.
+
+resource "azurerm_storage_container" "agent_screenshots_glimmung" {
+  name                  = "glimmung"
+  storage_account_id    = azurerm_storage_account.agent_screenshots.id
+  container_access_type = "blob"
+}
+
+data "azuread_service_principal" "glimmung_ci" {
+  display_name = "glimmung"
+}
+
+resource "azurerm_role_assignment" "glimmung_screenshots_uploader" {
+  scope                = azurerm_storage_container.agent_screenshots_glimmung.resource_manager_id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = data.azuread_service_principal.glimmung_ci.object_id
+}
+
+resource "github_actions_variable" "glimmung_screenshot_storage_account" {
+  repository    = "glimmung"
+  variable_name = "AGENT_SCREENSHOT_STORAGE_ACCOUNT"
+  value         = azurerm_storage_account.agent_screenshots.name
+}
+
+resource "github_actions_variable" "glimmung_screenshot_container" {
+  repository    = "glimmung"
+  variable_name = "AGENT_SCREENSHOT_CONTAINER"
+  value         = azurerm_storage_container.agent_screenshots_glimmung.name
+}
+
+resource "github_actions_variable" "glimmung_screenshot_container_url" {
+  repository    = "glimmung"
+  variable_name = "AGENT_SCREENSHOT_CONTAINER_URL"
+  value         = "https://${azurerm_storage_account.agent_screenshots.name}.blob.core.windows.net/${azurerm_storage_container.agent_screenshots_glimmung.name}"
+}
+
+# AKS cluster name + RG for the agent-run workflow's `az aks get-credentials`
+# step. Manually set on the ambience repo today; folding glimmung's pair into
+# tofu so they're managed alongside the screenshot vars (same workflow needs
+# both). When ambience's are next touched, fold them in here too.
+resource "github_actions_variable" "glimmung_aks_resource_group" {
+  repository    = "glimmung"
+  variable_name = "AZURE_AKS_RESOURCE_GROUP"
+  value         = data.azurerm_resource_group.main.name
+}
+
+resource "github_actions_variable" "glimmung_aks_cluster_name" {
+  repository    = "glimmung"
+  variable_name = "AZURE_AKS_CLUSTER_NAME"
+  value         = azurerm_kubernetes_cluster.main.name
+}

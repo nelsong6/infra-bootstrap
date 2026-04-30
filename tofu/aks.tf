@@ -68,11 +68,13 @@ resource "azurerm_federated_identity_credential" "shared_workload" {
   subject             = "system:serviceaccount:default:infra-shared"
 }
 
-# Per-app federated credentials — each app on AKS runs under a ServiceAccount
-# named `infra-shared` in its own namespace. These creds let those pods
-# assume infra-shared-identity (Cosmos/App Config/Key Vault/Storage roles).
+# Per-app federated credentials — each app on AKS that still uses the
+# shared identity gets a fed cred for `system:serviceaccount:<app>:infra-shared`.
+# Subset rather than every k8s_app because some apps don't actually federate
+# (dead fed creds) and others have migrated to their own per-app identity.
+# See `local.shared_identity_apps` in main.tf for the criteria.
 resource "azurerm_federated_identity_credential" "shared_workload_app" {
-  for_each            = local.k8s_apps
+  for_each            = local.shared_identity_apps
   name                = "aks-shared-workload-${each.key}"
   resource_group_name = data.azurerm_resource_group.main.name
   parent_id           = azurerm_user_assigned_identity.shared.id

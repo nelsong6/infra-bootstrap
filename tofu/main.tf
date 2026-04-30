@@ -105,10 +105,27 @@ locals {
   ci_only_apps = toset(["ambience", "fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop"])
 
   # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
-  # push images) and wires a federated credential to the shared managed
-  # identity for `system:serviceaccount:<app>:infra-shared`. Expand as each
-  # app migrates off the shared api onto its own K8s Deployment.
+  # push images). Expand as each app migrates off the shared api onto its
+  # own K8s Deployment.
   k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung"])
+
+  # Subset of k8s_apps whose pods actually federate to infra-shared-identity
+  # via `system:serviceaccount:<app>:infra-shared`. Used only by the per-app
+  # fed cred in aks.tf. Apps left out fall into one of two camps:
+  #   - Pod doesn't bind to SA `infra-shared` at all, so its fed cred is
+  #     dead code (ambience's chart sets no serviceAccountName; tank-operator
+  #     renamed its SA to `tank-operator`; my-homepage's SA is missing the
+  #     `azure.workload.identity/client-id` annotation, so the WI webhook
+  #     never injects the token volume).
+  #   - App has migrated to its own per-app managed identity in its own
+  #     tofu (glimmung — see glimmung/tofu/identity.tf). Keeping it on the
+  #     shared identity would re-grant the cross-app blast radius we're
+  #     trying to retire.
+  # Treat this as a shrinking set: every entry left here represents an app
+  # that hasn't been migrated yet. The shared identity itself
+  # (azurerm_user_assigned_identity.shared) and the for_each below can be
+  # deleted once this is empty.
+  shared_identity_apps = toset(["investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "diagrams", "llm-explorer"])
   app_default_branch = {
     "fzt" = "main"
   }
