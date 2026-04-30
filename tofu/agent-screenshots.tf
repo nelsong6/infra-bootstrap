@@ -108,36 +108,42 @@ resource "azurerm_role_assignment" "glimmung_screenshots_uploader" {
   principal_id         = data.azuread_service_principal.glimmung_ci.object_id
 }
 
-resource "github_actions_variable" "glimmung_screenshot_storage_account" {
-  repository    = "glimmung"
-  variable_name = "AGENT_SCREENSHOT_STORAGE_ACCOUNT"
-  value         = azurerm_storage_account.agent_screenshots.name
+# Glimmung's agent-run workflow reads these via `tofu output -raw <name>`
+# against this state at runtime, instead of pushing them into GitHub
+# Actions vars. State is the single source of truth; rotations don't
+# need a tofu re-apply just to push the new value. The role assignment
+# below grants the glimmung CI SP read access to the tfstate blob.
+#
+# (Ambience still pushes its values via the `github_actions_variable`
+# block above; folding ambience over to tofu outputs is a separate
+# follow-up — left in place for now to avoid coupling that migration
+# to this one.)
+output "agent_screenshots_storage_account" {
+  value       = azurerm_storage_account.agent_screenshots.name
+  description = "Name of the shared agent-run screenshot storage account."
 }
 
-resource "github_actions_variable" "glimmung_screenshot_container" {
-  repository    = "glimmung"
-  variable_name = "AGENT_SCREENSHOT_CONTAINER"
-  value         = azurerm_storage_container.agent_screenshots_glimmung.name
+output "agent_screenshots_container_glimmung" {
+  value       = azurerm_storage_container.agent_screenshots_glimmung.name
+  description = "Per-app blob container holding glimmung's agent-run screenshots."
 }
 
-resource "github_actions_variable" "glimmung_screenshot_container_url" {
-  repository    = "glimmung"
-  variable_name = "AGENT_SCREENSHOT_CONTAINER_URL"
-  value         = "https://${azurerm_storage_account.agent_screenshots.name}.blob.core.windows.net/${azurerm_storage_container.agent_screenshots_glimmung.name}"
+output "agent_screenshots_container_url_glimmung" {
+  value       = "https://${azurerm_storage_account.agent_screenshots.name}.blob.core.windows.net/${azurerm_storage_container.agent_screenshots_glimmung.name}"
+  description = "Full HTTPS URL of the glimmung screenshot container, used as the prefix for `![](url)` markdown in agent PR bodies."
 }
 
-# AKS cluster name + RG for the agent-run workflow's `az aks get-credentials`
-# step. Manually set on the ambience repo today; folding glimmung's pair into
-# tofu so they're managed alongside the screenshot vars (same workflow needs
-# both). When ambience's are next touched, fold them in here too.
-resource "github_actions_variable" "glimmung_aks_resource_group" {
-  repository    = "glimmung"
-  variable_name = "AZURE_AKS_RESOURCE_GROUP"
-  value         = data.azurerm_resource_group.main.name
+# tfstate read access — lets the glimmung repo's CI workflows do
+# `tofu output -raw <name>` against this state in lieu of pushing values
+# into github_actions_variable. Storage Blob Data Reader on the specific
+# state container; no other Azure surface granted.
+data "azurerm_storage_account" "tfstate" {
+  name                = "nelsontofu"
+  resource_group_name = data.azurerm_resource_group.main.name
 }
 
-resource "github_actions_variable" "glimmung_aks_cluster_name" {
-  repository    = "glimmung"
-  variable_name = "AZURE_AKS_CLUSTER_NAME"
-  value         = azurerm_kubernetes_cluster.main.name
+resource "azurerm_role_assignment" "glimmung_ci_tfstate_reader" {
+  scope                = "${data.azurerm_storage_account.tfstate.id}/blobServices/default/containers/tfstate"
+  role_definition_name = "Storage Blob Data Reader"
+  principal_id         = data.azuread_service_principal.glimmung_ci.object_id
 }

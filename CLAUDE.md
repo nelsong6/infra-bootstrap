@@ -51,7 +51,7 @@ The app module (`tofu/app/main.tf`) creates per-app: GitHub repo, Azure AD app r
 
 ## Tofu → workflow wiring
 
-For values produced by tofu that an internal workflow needs (SP client IDs, storage account names, secret URIs), prefer `output "x" { value = ... }` + `tofu output -raw x` at runtime over a `github_actions_variable` resource that pushes the value into Actions vars. State stays the single source of truth, no drift between vars and reality, rotations don't need a tofu re-apply just to push the new value. **Bootstrap caveat:** Tier-0 vars the workflow needs *before* it can `tofu init` — `ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID` — are unavoidable as variables. Beyond those, push to outputs. App repos that can't read state still use GH variables (pragmatic, not aspirational).
+For values produced by tofu that an internal workflow needs (SP client IDs, storage account names, secret URIs), use `output "x" { value = ... }` + `tofu output -raw x` at runtime against this repo's state. State stays the single source of truth, no drift between vars and reality, rotations don't need a tofu re-apply just to push the new value. App repos read the state by minting their CI SP an OIDC Azure token and granting it `Storage Blob Data Reader` on `nelsontofu/tfstate` (see e.g. `tofu/agent-screenshots.tf::glimmung_ci_tfstate_reader`); the workflow then runs `tofu init -backend-config=...` against the infra-bootstrap state and reads outputs. Avoid `github_actions_variable` for tofu-produced values — the only unavoidable exceptions are Tier-0 vars the workflow needs *before* it can `tofu init`: `ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID`.
 
 ## SSO
 
