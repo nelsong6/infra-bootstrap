@@ -9,6 +9,14 @@ kind: Application
 metadata:
   name: tank-operator-issue-agents
   namespace: argocd
+  annotations:
+    # Use kube-apiserver dry-run apply for diffing instead of Argo's
+    # structured diff. Required because the ExternalSecret CRD defaults
+    # spec fields (refreshInterval, target.deletionPolicy, the per-data
+    # remoteRef.{conversion,decoding,metadata,nullByte}Strategy fields)
+    # that the chart doesn't set — without ServerSideDiff Argo treats
+    # those defaults as drift and self-heal loops forever.
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
