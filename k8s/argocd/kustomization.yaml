@@ -11,3 +11,4 @@ resources:
   - argocd-cert.yaml
   - argocd-xlistenerset.yaml
   - argocd-route.yaml
+  - argocd-github-app-externalsecret.yaml
