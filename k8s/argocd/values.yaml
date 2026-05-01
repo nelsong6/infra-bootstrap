@@ -12,6 +12,11 @@ configs:
   cm:
     kustomize.buildOptions: --enable-helm
     url: https://argocd.romaine.life
+    # Webhook deliveries from the romaine-life-argocd GitHub App refresh
+    # affected Applications immediately; polling only catches missed
+    # deliveries, so 5m is plenty (chart default is 2m, which thrashed
+    # GitHub's anonymous rate limit before repo-creds was wired).
+    timeout.reconciliation: 5m
     dex.config: |
       connectors:
         - type: microsoft
