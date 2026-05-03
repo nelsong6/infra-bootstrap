@@ -31,7 +31,7 @@ jobs:
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v2
         with:
-          tofu_version: '1.9.0'
+          tofu_version: '1.11.0'
 
       - name: Azure Login via OIDC
         uses: azure/login@v3
@@ -64,19 +64,6 @@ jobs:
             -backend-config="storage_account_name=nelsontofu" \
             -backend-config="container_name=tfstate" \
             -backend-config="key=infra-bootstrap.tfstate"
-
-      - name: Forget deleted romaine-life peering state
-        if: github.event_name != 'pull_request'
-        working-directory: tofu
-        env:
-          ARM_USE_OIDC: "true"
-          ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
-          ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
-        run: |
-          tofu state rm azurerm_role_assignment.romaine_life_network_contributor || true
-          tofu state rm azurerm_virtual_network_peering.infra_to_romaine_life_card_utility_stats_dev || true
-          tofu state rm azurerm_virtual_network_peering.romaine_life_card_utility_stats_dev_to_infra || true
 
       - name: Plan
         id: plan
@@ -173,7 +160,7 @@ jobs:
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v2
         with:
-          tofu_version: '1.9.0'
+          tofu_version: '1.11.0'
 
       - name: Azure Login via OIDC
         uses: azure/login@v3
