@@ -100,7 +100,7 @@ resource "azurerm_role_assignment" "nelson_storage" {
 }
 
 locals {
-  ci_only_apps = toset(["ambience", "fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop"])
+  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop"])
 
   # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
   # push images). Expand as each app migrates off the shared api onto its
@@ -256,4 +256,3 @@ module "app" {
   arm_subscription_id        = data.azurerm_client_config.current.subscription_id
   google_client_id           = data.azurerm_key_vault_secret.google_oauth_client_id.value
 }
-
