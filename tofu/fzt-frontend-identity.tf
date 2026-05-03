@@ -28,7 +28,7 @@ resource "azurerm_cosmosdb_sql_role_assignment" "fzt_frontend_cosmos" {
   role_definition_id  = "${azurerm_cosmosdb_account.serverless.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
   principal_id        = azurerm_user_assigned_identity.fzt_frontend.principal_id
   # `<account>/dbs/<name>` — Cosmos data plane scope, NOT the ARM ID.
-  scope               = "${azurerm_cosmosdb_account.serverless.id}/dbs/HomepageDB"
+  scope = "${azurerm_cosmosdb_account.serverless.id}/dbs/HomepageDB"
 }
 
 resource "azurerm_role_assignment" "fzt_frontend_kv_jwt_secret" {
