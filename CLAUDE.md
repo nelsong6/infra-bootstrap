@@ -36,7 +36,7 @@ The CI workflow (`tofu.yaml`) has a bootstrap job that runs once: installs ArgoC
 
 ## Cluster Components
 
-- **AKS** (`infra-aks`) — Free tier, 1× Standard_B4s_v2 (4 vCPU, 16 GiB RAM) with a 128 GiB OS disk, Azure CNI Overlay, workload identity. The cluster intentionally runs as a single-node dev cluster; availability beyond multiple pods is not a current goal.
+- **AKS** (`infra-aks`) — Free tier, 1× Standard_B4ms (4 vCPU, 16 GiB RAM) with a 128 GiB OS disk, Azure CNI Overlay, workload identity. The cluster intentionally runs as a single-node dev cluster; availability beyond multiple pods is not a current goal.
 - **ACR** (`romainecr`) — Basic SKU, AcrPull for kubelet identity
 - **Envoy Gateway** — Gateway API controller + shared Gateway with HTTP/HTTPS listeners
 - **ExternalDNS** — Azure DNS via workload identity, watches HTTPRoute resources
