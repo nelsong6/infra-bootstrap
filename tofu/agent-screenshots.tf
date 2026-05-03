@@ -147,9 +147,3 @@ resource "azurerm_role_assignment" "glimmung_ci_tfstate_reader" {
   role_definition_name = "Storage Blob Data Reader"
   principal_id         = data.azuread_service_principal.glimmung_ci.object_id
 }
-
-resource "azurerm_role_assignment" "ambience_ci_tfstate_reader" {
-  scope                = "${data.azurerm_storage_account.tfstate.id}/blobServices/default/containers/tfstate"
-  role_definition_name = "Storage Blob Data Reader"
-  principal_id         = data.azuread_service_principal.ambience_ci.object_id
-}
