@@ -5,7 +5,7 @@
 # registration with Application.ReadWrite.OwnedBy.
 
 data "azuread_application" "ambience_oauth_handoff" {
-  display_name = "ambience-oauth"
+  object_id = "0f8417f4-9ba1-4116-94bd-ae1a18b8f356"
 }
 
 resource "azuread_application_owner" "ambience_oauth_ci" {
