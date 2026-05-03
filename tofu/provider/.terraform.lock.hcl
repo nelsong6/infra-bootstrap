@@ -3,7 +3,7 @@
 
 provider "registry.opentofu.org/auth0/auth0" {
   version     = "1.40.0"
-  constraints = "~> 1.40.0"
+  constraints = "1.40.0"
   hashes = [
     "h1:9OyJPA8tpyVul4aorqsJGSobJVI6QdxMWF3aqV2DDwk=",
     "h1:Rb2/b/BVr34SEnMRQVGvtHDN3+ZGA+32SAckyJrtg7s=",
@@ -26,7 +26,8 @@ provider "registry.opentofu.org/auth0/auth0" {
 }
 
 provider "registry.opentofu.org/azure/azapi" {
-  version = "2.9.0"
+  version     = "2.9.0"
+  constraints = "2.9.0"
   hashes = [
     "h1:ivmN39jnMJRZXlPuX8r5TTXM8lyF8ZocPQQgEUy61eM=",
     "h1:lN0C7TI2dqStnZysEBhDq33t9DbpUp/8rOWxZUF/st0=",
@@ -48,7 +49,7 @@ provider "registry.opentofu.org/azure/azapi" {
 
 provider "registry.opentofu.org/hashicorp/azuread" {
   version     = "3.8.0"
-  constraints = "~> 3.0"
+  constraints = "3.8.0"
   hashes = [
     "h1:rqAjqkA5dloKFuETW2+/jaFrnUFIPKJkTAkpQFUFh6k=",
     "h1:tpPnBAqjrOoEjI76CX9WNWA/JIvtnQEigNOWKvp8QbU=",
@@ -67,7 +68,7 @@ provider "registry.opentofu.org/hashicorp/azuread" {
 
 provider "registry.opentofu.org/hashicorp/azurerm" {
   version     = "4.70.0"
-  constraints = "~> 4.0"
+  constraints = "4.70.0"
   hashes = [
     "h1:42A+3qYeMDhrNQLEuY0cRHspoFXqH4duiRZo7ED1QNY=",
     "h1:WdpQTMgoa/kwX6ZZlk05GoCtwO/hpPd5KQqp8M1stLo=",
@@ -92,7 +93,7 @@ provider "registry.opentofu.org/hashicorp/azurerm" {
 
 provider "registry.opentofu.org/integrations/github" {
   version     = "6.12.1"
-  constraints = "~> 6.0"
+  constraints = "6.12.1"
   hashes = [
     "h1:HXXTIvXPBVJ4mBs01fcJk7wG8N3jGvR/4HqjnRGp4Wo=",
     "h1:bGz4LIep/7PVrqy6P8cTYbAJpdxXGrupUJjkCczlzIs=",
