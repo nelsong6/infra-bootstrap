@@ -40,6 +40,15 @@ provider "azurerm" {
   resource_provider_registrations = "none"
 }
 
+provider "azurerm" {
+  alias = "cluster"
+
+  features {}
+  use_oidc                        = true
+  subscription_id                 = var.cluster_subscription_id != "" ? var.cluster_subscription_id : null
+  resource_provider_registrations = "none"
+}
+
 provider "azuread" {
   use_oidc = true
 }

@@ -10,9 +10,11 @@
 # ============================================================================
 
 resource "azurerm_kubernetes_cluster" "main" {
+  provider = azurerm.cluster
+
   name                = "infra-aks"
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
+  resource_group_name = local.cluster_resource_group_name
+  location            = local.cluster_resource_group_location
   dns_prefix          = "infra-aks"
 
   # Free tier — no SLA, no cost for the control plane

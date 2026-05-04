@@ -8,15 +8,19 @@
 # ============================================================================
 
 resource "azurerm_virtual_network" "main" {
+  provider = azurerm.cluster
+
   name                = "infra-vnet"
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
+  resource_group_name = local.cluster_resource_group_name
+  location            = local.cluster_resource_group_location
   address_space       = ["10.0.0.0/16"]
 }
 
 resource "azurerm_subnet" "aks_nodes" {
+  provider = azurerm.cluster
+
   name                 = "aks-nodes"
-  resource_group_name  = data.azurerm_resource_group.main.name
+  resource_group_name  = local.cluster_resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.0.0.0/22"]
 }

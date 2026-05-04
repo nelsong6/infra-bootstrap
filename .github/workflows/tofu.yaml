@@ -75,6 +75,8 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
           TF_VAR_github_pat: ${{ steps.secrets.outputs.github_pat }}
           TF_VAR_github_owner: nelsong6
+          TF_VAR_cluster_subscription_id: ${{ vars.CLUSTER_ARM_SUBSCRIPTION_ID }}
+          TF_VAR_cluster_resource_group_name: ${{ vars.CLUSTER_RESOURCE_GROUP_NAME || 'infra' }}
           AUTH0_CLIENT_SECRET: ${{ steps.secrets.outputs.auth0_secret }}
         run: |
           set -o pipefail
@@ -209,6 +211,8 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
           TF_VAR_github_pat: ${{ steps.secrets.outputs.github_pat }}
           TF_VAR_github_owner: nelsong6
+          TF_VAR_cluster_subscription_id: ${{ vars.CLUSTER_ARM_SUBSCRIPTION_ID }}
+          TF_VAR_cluster_resource_group_name: ${{ vars.CLUSTER_RESOURCE_GROUP_NAME || 'infra' }}
           AUTH0_CLIENT_SECRET: ${{ steps.secrets.outputs.auth0_secret }}
         run: |
           tofu apply tfplan
@@ -233,8 +237,11 @@ jobs:
       # ── Cluster access ───────────────────────────────────────────
       - name: Get AKS credentials
         id: aks
+        env:
+          CLUSTER_ARM_SUBSCRIPTION_ID: ${{ vars.CLUSTER_ARM_SUBSCRIPTION_ID || vars.ARM_SUBSCRIPTION_ID }}
+          CLUSTER_RESOURCE_GROUP_NAME: ${{ vars.CLUSTER_RESOURCE_GROUP_NAME || 'infra' }}
         run: |
-          if az aks get-credentials --resource-group infra --name infra-aks 2>/dev/null; then
+          if az aks get-credentials --subscription "$CLUSTER_ARM_SUBSCRIPTION_ID" --resource-group "$CLUSTER_RESOURCE_GROUP_NAME" --name infra-aks 2>/dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT

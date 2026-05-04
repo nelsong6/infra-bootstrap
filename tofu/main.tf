@@ -16,6 +16,21 @@ data "azurerm_resource_group" "main" {
   name = "infra"
 }
 
+locals {
+  cluster_subscription_id             = var.cluster_subscription_id != "" ? var.cluster_subscription_id : data.azurerm_client_config.current.subscription_id
+  cluster_uses_dedicated_subscription = local.cluster_subscription_id != data.azurerm_client_config.current.subscription_id
+  cluster_resource_group_name         = local.cluster_uses_dedicated_subscription ? azurerm_resource_group.cluster[0].name : data.azurerm_resource_group.main.name
+  cluster_resource_group_location     = local.cluster_uses_dedicated_subscription ? azurerm_resource_group.cluster[0].location : data.azurerm_resource_group.main.location
+}
+
+resource "azurerm_resource_group" "cluster" {
+  provider = azurerm.cluster
+  count    = local.cluster_uses_dedicated_subscription ? 1 : 0
+
+  name     = var.cluster_resource_group_name
+  location = data.azurerm_resource_group.main.location
+}
+
 # ============================================================================
 # Shared Database Infrastructure - Cosmos DB
 # ============================================================================
