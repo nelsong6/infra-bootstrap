@@ -253,7 +253,9 @@ jobs:
         id: argocd
         if: steps.aks.outputs.exists == 'true'
         run: |
-          if kubectl get namespace argocd 2>/dev/null && kubectl get deploy argocd-server -n argocd 2>/dev/null; then
+          if kubectl get namespace argocd 2>/dev/null \
+            && kubectl get deploy argocd-server -n argocd 2>/dev/null \
+            && kubectl get application.argoproj.io apps -n argocd 2>/dev/null; then
             echo "status=deployed" >> $GITHUB_OUTPUT
           else
             echo "status=install" >> $GITHUB_OUTPUT
