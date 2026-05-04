@@ -102,6 +102,18 @@ resource "azurerm_kubernetes_cluster" "cluster" {
   }
 }
 
+# Allows the guarded mcp-azure-admin server to use AKS Run Command against the
+# migration cluster without granting it write access to the whole subscription.
+resource "azurerm_role_assignment" "mcp_azure_admin_cluster_contributor" {
+  provider = azurerm.cluster
+  count    = local.cluster_uses_dedicated_subscription ? 1 : 0
+
+  scope                = azurerm_kubernetes_cluster.cluster[0].id
+  role_definition_name = "Contributor"
+  principal_id         = "d63582e4-a494-4f84-b1d2-ae74e125a8ed"
+  principal_type       = "ServicePrincipal"
+}
+
 # ============================================================================
 # Workload Identity — Federated Credential for Shared Identity
 # ============================================================================
