@@ -127,6 +127,11 @@ output "aks_cluster_name" {
   description = "Name of the AKS cluster"
 }
 
+output "aks_resource_group_name" {
+  value       = local.cluster_resource_group_name
+  description = "Resource group containing the AKS cluster"
+}
+
 output "aks_cluster_id" {
   value       = azurerm_kubernetes_cluster.main.id
   description = "Resource ID of the AKS cluster"
@@ -159,4 +164,3 @@ output "shared_identity_client_id" {
   value       = azurerm_user_assigned_identity.shared.client_id
   description = "Client ID of the shared managed identity (used for workload identity annotations on K8s service accounts)"
 }
-
