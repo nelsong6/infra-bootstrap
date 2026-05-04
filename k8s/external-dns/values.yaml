@@ -1,8 +1,8 @@
 external-dns:
   provider:
     name: azure
-  txtOwnerId: infra-aks
-  policy: sync
+  txtOwnerId: infra-aks-new
+  policy: upsert-only
   sources:
     - gateway-httproute
     - gateway-grpcroute
