@@ -52,6 +52,16 @@ resource "azurerm_federated_identity_credential" "fzt_frontend" {
   subject             = "system:serviceaccount:fzt-frontend:infra-shared"
 }
 
+resource "azurerm_federated_identity_credential" "cluster_fzt_frontend" {
+  count               = local.cluster_uses_dedicated_subscription ? 1 : 0
+  name                = "aks-cluster-fzt-frontend"
+  resource_group_name = data.azurerm_resource_group.main.name
+  parent_id           = azurerm_user_assigned_identity.fzt_frontend.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = azurerm_kubernetes_cluster.cluster[0].oidc_issuer_url
+  subject             = "system:serviceaccount:fzt-frontend:infra-shared"
+}
+
 output "fzt_frontend_identity_client_id" {
   value       = azurerm_user_assigned_identity.fzt_frontend.client_id
   description = "client_id of fzt-frontend-identity. Pin into fzt-frontend/k8s/serviceaccount.yaml."

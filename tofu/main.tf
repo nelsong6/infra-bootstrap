@@ -21,6 +21,9 @@ locals {
   cluster_uses_dedicated_subscription = local.cluster_subscription_id != data.azurerm_client_config.current.subscription_id
   cluster_resource_group_name         = local.cluster_uses_dedicated_subscription ? azurerm_resource_group.cluster[0].name : data.azurerm_resource_group.main.name
   cluster_resource_group_location     = local.cluster_uses_dedicated_subscription ? azurerm_resource_group.cluster[0].location : data.azurerm_resource_group.main.location
+  active_aks_oidc_issuer_url          = local.cluster_uses_dedicated_subscription ? azurerm_kubernetes_cluster.cluster[0].oidc_issuer_url : azurerm_kubernetes_cluster.main.oidc_issuer_url
+  active_aks_cluster_id               = local.cluster_uses_dedicated_subscription ? azurerm_kubernetes_cluster.cluster[0].id : azurerm_kubernetes_cluster.main.id
+  active_aks_cluster_name             = local.cluster_uses_dedicated_subscription ? azurerm_kubernetes_cluster.cluster[0].name : azurerm_kubernetes_cluster.main.name
 }
 
 resource "azurerm_resource_group" "cluster" {

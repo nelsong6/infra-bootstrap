@@ -123,7 +123,7 @@ output "landing_page_static_web_app_name" {
 # ============================================================================
 
 output "aks_cluster_name" {
-  value       = azurerm_kubernetes_cluster.main.name
+  value       = local.active_aks_cluster_name
   description = "Name of the AKS cluster"
 }
 
@@ -133,12 +133,12 @@ output "aks_resource_group_name" {
 }
 
 output "aks_cluster_id" {
-  value       = azurerm_kubernetes_cluster.main.id
+  value       = local.active_aks_cluster_id
   description = "Resource ID of the AKS cluster"
 }
 
 output "aks_oidc_issuer_url" {
-  value       = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  value       = local.active_aks_oidc_issuer_url
   description = "OIDC issuer URL for workload identity federation"
 }
 

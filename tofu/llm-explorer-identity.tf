@@ -48,6 +48,16 @@ resource "azurerm_federated_identity_credential" "llm_explorer" {
   subject             = "system:serviceaccount:llm-explorer:infra-shared"
 }
 
+resource "azurerm_federated_identity_credential" "cluster_llm_explorer" {
+  count               = local.cluster_uses_dedicated_subscription ? 1 : 0
+  name                = "aks-cluster-llm-explorer"
+  resource_group_name = data.azurerm_resource_group.main.name
+  parent_id           = azurerm_user_assigned_identity.llm_explorer.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = azurerm_kubernetes_cluster.cluster[0].oidc_issuer_url
+  subject             = "system:serviceaccount:llm-explorer:infra-shared"
+}
+
 output "llm_explorer_identity_client_id" {
   value       = azurerm_user_assigned_identity.llm_explorer.client_id
   description = "client_id of llm-explorer-identity. Pin into llm-explorer/k8s/serviceaccount.yaml."
