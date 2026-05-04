@@ -103,7 +103,7 @@ resource "azurerm_kubernetes_cluster" "cluster" {
 }
 
 # Allows the guarded mcp-azure-admin server to use AKS Run Command against the
-# migration cluster without granting it write access to the whole subscription.
+# dedicated migration cluster without granting write access to the whole subscription.
 resource "azurerm_role_assignment" "mcp_azure_admin_cluster_contributor" {
   provider = azurerm.cluster
   count    = local.cluster_uses_dedicated_subscription ? 1 : 0
