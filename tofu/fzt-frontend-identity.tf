@@ -44,11 +44,12 @@ resource "azurerm_role_assignment" "fzt_frontend_appconfig" {
 }
 
 resource "azurerm_federated_identity_credential" "fzt_frontend" {
+  count               = local.cluster_uses_dedicated_subscription ? 0 : 1
   name                = "aks-fzt-frontend"
   resource_group_name = data.azurerm_resource_group.main.name
   parent_id           = azurerm_user_assigned_identity.fzt_frontend.id
   audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  issuer              = azurerm_kubernetes_cluster.main[0].oidc_issuer_url
   subject             = "system:serviceaccount:fzt-frontend:infra-shared"
 }
 

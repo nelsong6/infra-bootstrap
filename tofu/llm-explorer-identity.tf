@@ -40,11 +40,12 @@ resource "azurerm_role_assignment" "llm_explorer_appconfig" {
 }
 
 resource "azurerm_federated_identity_credential" "llm_explorer" {
+  count               = local.cluster_uses_dedicated_subscription ? 0 : 1
   name                = "aks-llm-explorer"
   resource_group_name = data.azurerm_resource_group.main.name
   parent_id           = azurerm_user_assigned_identity.llm_explorer.id
   audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  issuer              = azurerm_kubernetes_cluster.main[0].oidc_issuer_url
   subject             = "system:serviceaccount:llm-explorer:infra-shared"
 }
 

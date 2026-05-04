@@ -10,6 +10,8 @@
 # ============================================================================
 
 resource "azurerm_kubernetes_cluster" "main" {
+  count = local.cluster_uses_dedicated_subscription ? 0 : 1
+
   name                = "infra-aks"
   resource_group_name = data.azurerm_resource_group.main.name
   location            = data.azurerm_resource_group.main.location
@@ -48,18 +50,6 @@ resource "azurerm_kubernetes_cluster" "main" {
     network_plugin_mode = "overlay"
     service_cidr        = "172.16.0.0/16"
     dns_service_ip      = "172.16.0.10"
-  }
-
-  lifecycle {
-    # The existing trial-subscription cluster still has 30 GiB OS disks. AKS
-    # would rotate through a temporary node pool to resize them, but that
-    # subscription has no spare vCPU quota. Keep the desired value above so a
-    # fresh cluster is born with 128 GiB disks, while avoiding a dead-end resize
-    # on the old cluster during the subscription migration.
-    ignore_changes = [
-      default_node_pool[0].os_disk_size_gb,
-      default_node_pool[0].upgrade_settings,
-    ]
   }
 }
 
@@ -123,11 +113,12 @@ resource "azurerm_role_assignment" "mcp_azure_admin_cluster_contributor" {
 # can assume this identity to access Azure resources.
 
 resource "azurerm_federated_identity_credential" "shared_workload" {
+  count               = local.cluster_uses_dedicated_subscription ? 0 : 1
   name                = "aks-shared-workload"
   resource_group_name = data.azurerm_resource_group.main.name
   parent_id           = azurerm_user_assigned_identity.shared.id
   audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  issuer              = azurerm_kubernetes_cluster.main[0].oidc_issuer_url
   subject             = "system:serviceaccount:default:infra-shared"
 }
 
@@ -147,12 +138,16 @@ resource "azurerm_federated_identity_credential" "cluster_shared_workload" {
 # (dead fed creds) and others have migrated to their own per-app identity.
 # See `local.shared_identity_apps` in main.tf for the criteria.
 resource "azurerm_federated_identity_credential" "shared_workload_app" {
-  for_each            = local.shared_identity_apps
+  for_each = {
+    for key, value in local.shared_identity_apps : key => value
+    if !local.cluster_uses_dedicated_subscription
+  }
+
   name                = "aks-shared-workload-${each.key}"
   resource_group_name = data.azurerm_resource_group.main.name
   parent_id           = azurerm_user_assigned_identity.shared.id
   audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  issuer              = azurerm_kubernetes_cluster.main[0].oidc_issuer_url
   subject             = "system:serviceaccount:${each.key}:infra-shared"
 }
 
@@ -172,11 +167,12 @@ resource "azurerm_federated_identity_credential" "cluster_shared_workload_app" {
 
 # ExternalDNS — manages DNS records in Azure DNS from Gateway/HTTPRoute resources
 resource "azurerm_federated_identity_credential" "external_dns" {
+  count               = local.cluster_uses_dedicated_subscription ? 0 : 1
   name                = "aks-external-dns"
   resource_group_name = data.azurerm_resource_group.main.name
   parent_id           = azurerm_user_assigned_identity.shared.id
   audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  issuer              = azurerm_kubernetes_cluster.main[0].oidc_issuer_url
   subject             = "system:serviceaccount:external-dns:external-dns"
 }
 
@@ -192,11 +188,12 @@ resource "azurerm_federated_identity_credential" "cluster_external_dns" {
 
 # ExternalSecrets — syncs secrets from Key Vault to K8s
 resource "azurerm_federated_identity_credential" "external_secrets" {
+  count               = local.cluster_uses_dedicated_subscription ? 0 : 1
   name                = "aks-external-secrets"
   resource_group_name = data.azurerm_resource_group.main.name
   parent_id           = azurerm_user_assigned_identity.shared.id
   audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  issuer              = azurerm_kubernetes_cluster.main[0].oidc_issuer_url
   subject             = "system:serviceaccount:external-secrets:external-secrets"
 }
 
@@ -222,11 +219,12 @@ resource "azurerm_role_assignment" "shared_identity_dns" {
 # the cert-manager controller's ServiceAccount so wildcard certs (e.g.
 # *.<app>.dev.romaine.life) can be solved without HTTP-01.
 resource "azurerm_federated_identity_credential" "cert_manager" {
+  count               = local.cluster_uses_dedicated_subscription ? 0 : 1
   name                = "aks-cert-manager"
   resource_group_name = data.azurerm_resource_group.main.name
   parent_id           = azurerm_user_assigned_identity.shared.id
   audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  issuer              = azurerm_kubernetes_cluster.main[0].oidc_issuer_url
   subject             = "system:serviceaccount:cert-manager:cert-manager"
 }
 
