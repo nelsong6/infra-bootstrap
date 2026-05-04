@@ -51,6 +51,15 @@ resource "azurerm_kubernetes_cluster" "main" {
     service_cidr        = "172.16.0.0/16"
     dns_service_ip      = "172.16.0.10"
   }
+
+  lifecycle {
+    # The existing trial-subscription cluster still has 30 GiB OS disks. AKS
+    # would rotate through a temporary node pool to resize them, but that
+    # subscription has no spare vCPU quota. Keep the desired value above so a
+    # fresh cluster is born with 128 GiB disks, while avoiding a dead-end resize
+    # on the old cluster during the subscription migration.
+    ignore_changes = [default_node_pool[0].os_disk_size_gb]
+  }
 }
 
 # ============================================================================
