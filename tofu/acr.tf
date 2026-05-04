@@ -20,6 +20,13 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
   principal_id         = azurerm_kubernetes_cluster.main.kubelet_identity[0].object_id
 }
 
+resource "azurerm_role_assignment" "cluster_aks_acr_pull" {
+  count                = local.cluster_uses_dedicated_subscription ? 1 : 0
+  scope                = azurerm_container_registry.main.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.cluster[0].kubelet_identity[0].object_id
+}
+
 # AcrPush for each k8s-migrated app's service principal. CI uses the SP (via
 # OIDC) to `az acr login` and `docker push` its image during build-and-deploy.
 # Subscription-scoped Contributor doesn't cover dataActions, so AcrPush must
