@@ -271,6 +271,11 @@ jobs:
           CLUSTER_RESOURCE_GROUP_NAME: ${{ vars.CLUSTER_RESOURCE_GROUP_NAME || 'infra' }}
         run: |
           kubectl delete namespace argocd --ignore-not-found --wait=true
+          kubectl delete crd \
+            applications.argoproj.io \
+            applicationsets.argoproj.io \
+            appprojects.argoproj.io \
+            --ignore-not-found --wait=true
 
           AKS_OIDC_ISSUER=$(az aks show \
             --subscription "$CLUSTER_ARM_SUBSCRIPTION_ID" \
