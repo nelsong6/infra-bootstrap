@@ -276,6 +276,14 @@ jobs:
             applicationsets.argoproj.io \
             appprojects.argoproj.io \
             --ignore-not-found --wait=true
+          kubectl delete clusterrole \
+            argocd-application-controller \
+            argocd-server \
+            --ignore-not-found --wait=true
+          kubectl delete clusterrolebinding \
+            argocd-application-controller \
+            argocd-server \
+            --ignore-not-found --wait=true
 
           AKS_OIDC_ISSUER=$(az aks show \
             --subscription "$CLUSTER_ARM_SUBSCRIPTION_ID" \
