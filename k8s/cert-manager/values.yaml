@@ -1,5 +1,5 @@
 cert-manager:
-  installCRDs: false
+  installCRDs: true
   config:
     enableGatewayAPI: true
   # Workload identity for the controller — required by the DNS-01 solver

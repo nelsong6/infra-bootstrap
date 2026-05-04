@@ -1,5 +1,5 @@
 external-secrets:
-  installCRDs: false
+  installCRDs: true
   serviceAccount:
     annotations:
       azure.workload.identity/client-id: 44b0ff37-b886-4101-ab19-23388ead9c0b
