@@ -264,9 +264,43 @@ jobs:
       # self-managed app uses. One definition, two consumers.
       - name: Install ArgoCD
         if: steps.aks.outputs.exists == 'true' && steps.argocd.outputs.status == 'install'
+        env:
+          CLUSTER_ARM_SUBSCRIPTION_ID: ${{ vars.CLUSTER_ARM_SUBSCRIPTION_ID || vars.ARM_SUBSCRIPTION_ID }}
+          CLUSTER_RESOURCE_GROUP_NAME: ${{ vars.CLUSTER_RESOURCE_GROUP_NAME || 'infra' }}
         run: |
-          kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-          kustomize build --enable-helm k8s/argocd | kubectl apply -n argocd -f -
+          kubectl delete namespace argocd --ignore-not-found --wait=true
+
+          AKS_OIDC_ISSUER=$(az aks show \
+            --subscription "$CLUSTER_ARM_SUBSCRIPTION_ID" \
+            --resource-group "$CLUSTER_RESOURCE_GROUP_NAME" \
+            --name infra-aks \
+            --query oidcIssuerProfile.issuerUrl \
+            -o tsv)
+          export AKS_OIDC_ISSUER
+
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          values = Path("k8s/argocd/values.yaml").read_text()
+          values = re.sub(
+              r"issuer: https://westus2\.oic\.prod-aks\.azure\.com/[^\n]+",
+              f"issuer: {os.environ['AKS_OIDC_ISSUER']}",
+              values,
+          )
+          Path("/tmp/argocd-values.yaml").write_text(values)
+          PY
+
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
+          helm upgrade --install argocd argo/argo-cd \
+            --version 9.5.2 \
+            --namespace argocd \
+            --create-namespace \
+            --values /tmp/argocd-values.yaml \
+            --wait \
+            --timeout 5m
           kubectl rollout status deploy/argocd-server -n argocd --timeout=5m
 
       - name: Configure private repo access
@@ -278,10 +312,12 @@ jobs:
             --from-literal=type=git \
             --from-literal=url=https://github.com/nelsong6/infra-bootstrap.git \
             --from-literal=password="$GITHUB_PAT" \
-            --from-literal=username=nelsong6
+            --from-literal=username=nelsong6 \
+            --dry-run=client -o yaml | kubectl apply -f -
           kubectl label secret infra-bootstrap-repo \
             --namespace argocd \
-            argocd.argoproj.io/secret-type=repository
+            argocd.argoproj.io/secret-type=repository \
+            --overwrite
 
       # ── Docker Hub credentials for ArgoCD ──────────────────────────
       # ArgoCD needs Docker Hub auth to pull OCI Helm charts (Docker
