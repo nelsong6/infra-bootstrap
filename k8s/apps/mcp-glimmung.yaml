@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/nelsong6/glimmung.git
+    repoURL: https://github.com/nelsong6/mcp-glimmung.git
     targetRevision: main
-    path: k8s-mcp-glimmung
+    path: chart
   destination:
     server: https://kubernetes.default.svc
     namespace: mcp-glimmung
