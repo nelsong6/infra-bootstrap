@@ -12,10 +12,12 @@ data:
       alias FrontmanServer.Accounts.User
       alias FrontmanServer.Repo
       alias FrontmanServerWeb.UserAuth
+      require Logger
 
       @authorize_url "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
       @token_url "https://login.microsoftonline.com/common/oauth2/v2.0/token"
       @redirect_uri "https://frontman-1.glimmung.dev.romaine.life/"
+      @origin "https://frontman-1.glimmung.dev.romaine.life"
 
       def request(conn, _params) do
         verifier = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
@@ -87,12 +89,28 @@ data:
 
         case Req.post(@token_url,
                body: body,
-               headers: [{"content-type", "application/x-www-form-urlencoded"}]
+               headers: [
+                 {"content-type", "application/x-www-form-urlencoded"},
+                 {"origin", @origin}
+               ]
              ) do
           {:ok, %{status: 200, body: %{"id_token" => id_token}}} -> {:ok, id_token}
-          _ -> {:error, :token_exchange_failed}
+          {:ok, %{status: status, body: body}} ->
+            Logger.warning("Entra token exchange failed: #{status} #{safe_entra_error(body)}")
+            {:error, :token_exchange_failed}
+
+          {:error, reason} ->
+            Logger.warning("Entra token exchange request failed: #{inspect(reason)}")
+            {:error, :token_exchange_failed}
         end
       end
+
+      defp safe_entra_error(%{"error" => error, "error_description" => description}) do
+        "#{error}: #{description}"
+      end
+
+      defp safe_entra_error(%{"error" => error}), do: error
+      defp safe_entra_error(_), do: "unknown_error"
 
       defp decode_claims(id_token) do
         case String.split(id_token, ".") do
