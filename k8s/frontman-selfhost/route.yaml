@@ -61,6 +61,15 @@ spec:
         - path:
             type: PathPrefix
             value: /socket
+        - path:
+            type: PathPrefix
+            value: /assets
+        - path:
+            type: PathPrefix
+            value: /images
+        - path:
+            type: PathPrefix
+            value: /phoenix
       backendRefs:
         - group: ""
           kind: Service

@@ -30,9 +30,9 @@ spec:
               git clone --depth=1 https://github.com/frontman-ai/frontman.git /workspace/frontman
               cd /workspace/frontman/apps/frontman_server
               cp /frontman-entra-patches/entra_auth_controller.ex lib/frontman_server_web/controllers/entra_auth_controller.ex
-              cp /frontman-entra-patches/new.html.heex lib/frontman_server_web/controllers/user_session_html/new.html.heex
               perl -0pi -e 's|get\("/", PageController, :home\)|get("/", PageController, :home)\n    get("/auth/entra", EntraAuthController, :request)|' lib/frontman_server_web/router.ex
               perl -0pi -e 's|  def home\(conn, _params\) do|  def home(conn, %{"code" => _code} = params) do\n    FrontmanServerWeb.EntraAuthController.callback(conn, params)\n  end\n\n  def home(conn, %{"error" => _error} = params) do\n    FrontmanServerWeb.EntraAuthController.callback(conn, params)\n  end\n\n  def home(conn, _params) do|' lib/frontman_server_web/controllers/page_controller.ex
+              perl -0pi -e 's|    render\(conn, :new, form: form\)|    if System.get_env("ENTRA_CLIENT_ID") && params["entra_failed"] != "1" do\n      redirect(conn, to: ~p"/auth/entra")\n    else\n      render(conn, :new, form: form)\n    end|' lib/frontman_server_web/controllers/user_session_controller.ex
               cat >> config/runtime.exs <<'EXS'
 
               if config_env() == :dev do

@@ -44,7 +44,7 @@ data:
         conn
         |> cleanup()
         |> put_flash(:error, "Entra sign in was cancelled.")
-        |> redirect(to: ~p"/users/log-in")
+        |> redirect(to: ~p"/users/log-in?entra_failed=1")
       end
 
       def callback(conn, %{"code" => code, "state" => state}) do
@@ -63,7 +63,7 @@ data:
             conn
             |> cleanup()
             |> put_flash(:error, "Entra sign in failed.")
-            |> redirect(to: ~p"/users/log-in")
+            |> redirect(to: ~p"/users/log-in?entra_failed=1")
         end
       end
 
@@ -71,7 +71,7 @@ data:
         conn
         |> cleanup()
         |> put_flash(:error, "Entra sign in failed.")
-        |> redirect(to: ~p"/users/log-in")
+        |> redirect(to: ~p"/users/log-in?entra_failed=1")
       end
 
       defp exchange_code(code, verifier) do
@@ -169,112 +169,3 @@ data:
         |> delete_session(:entra_code_verifier)
       end
     end
-  new.html.heex: |
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="space-y-8">
-        <%!-- Header --%>
-        <div class="text-center space-y-2">
-          <h1 class="text-2xl font-semibold text-white tracking-tight">
-            <%= if @current_scope do %>
-              Reauthenticate
-            <% else %>
-              Sign in to Frontman
-            <% end %>
-          </h1>
-          <p class="text-sm text-white/50">
-            <%= if @current_scope do %>
-              Please reauthenticate to perform sensitive actions on your account.
-            <% else %>
-              Continue with your Microsoft account.
-            <% end %>
-          </p>
-        </div>
-
-        <%!-- Entra auth for glimmung self-hosted Frontman. --%>
-        <div class="flex flex-col gap-3">
-          <.link
-            href={~p"/auth/entra"}
-            class={[
-              "group relative flex items-center justify-center gap-3 w-full",
-              "rounded-lg border border-white/[0.12] bg-white/[0.04]",
-              "px-4 py-3 text-sm font-medium text-white/90",
-              "transition-all duration-150",
-              "hover:bg-white/[0.08] hover:border-white/[0.18] hover:text-white",
-              "active:scale-[0.98]"
-            ]}
-          >
-            <svg class="size-5 shrink-0" viewBox="0 0 23 23">
-              <path fill="#f25022" d="M1 1h10v10H1z" />
-              <path fill="#00a4ef" d="M12 1h10v10H12z" />
-              <path fill="#7fba00" d="M1 12h10v10H1z" />
-              <path fill="#ffb900" d="M12 12h10v10H12z" />
-            </svg>
-            Continue with Microsoft
-          </.link>
-        </div>
-
-        <%!-- Divider --%>
-        <div class="flex items-center gap-3">
-          <div class="flex-1 h-px bg-white/[0.08]"></div>
-          <span class="text-xs text-white/30 select-none">Secure authentication via Entra</span>
-          <div class="flex-1 h-px bg-white/[0.08]"></div>
-        </div>
-
-        <%!-- Dev/E2E email+password login form (only in dev/e2e, never production) --%>
-        <%= if Application.get_env(:frontman_server, :dev_routes) do %>
-          <div class="space-y-3">
-            <div class="flex items-center gap-3">
-              <div class="flex-1 h-px bg-white/[0.08]"></div>
-              <span class="text-xs text-white/30 select-none">Dev login</span>
-              <div class="flex-1 h-px bg-white/[0.08]"></div>
-            </div>
-
-            <.form for={@form} action={~p"/users/log-in"} id="login-form" class="space-y-3">
-              <.input
-                field={@form[:email]}
-                type="email"
-                placeholder="Email"
-                required
-                class="w-full rounded-lg border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white/90 placeholder-white/30 focus:border-white/[0.24] focus:outline-none focus:ring-1 focus:ring-white/[0.12]"
-              />
-              <.input
-                field={@form[:password]}
-                type="password"
-                placeholder="Password"
-                required
-                class="w-full rounded-lg border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-sm text-white/90 placeholder-white/30 focus:border-white/[0.24] focus:outline-none focus:ring-1 focus:ring-white/[0.12]"
-              />
-              <button
-                type="submit"
-                id="login-submit"
-                class={[
-                  "flex items-center justify-center w-full",
-                  "rounded-lg border border-white/[0.12] bg-white/[0.04]",
-                  "px-4 py-3 text-sm font-medium text-white/90",
-                  "transition-all duration-150",
-                  "hover:bg-white/[0.08] hover:border-white/[0.18] hover:text-white",
-                  "active:scale-[0.98]"
-                ]}
-              >
-                Sign in with email
-              </button>
-            </.form>
-          </div>
-        <% end %>
-
-        <%!-- Terms --%>
-        <p class="text-center text-xs text-white/30 leading-relaxed">
-          By signing in, you agree to our
-          <a
-            href="https://frontman.sh/terms"
-            class="text-white/50 hover:text-white/70 underline underline-offset-2 transition-colors"
-          >
-            Terms of Service
-          </a>
-          and <a
-            href="https://frontman.sh/privacy"
-            class="text-white/50 hover:text-white/70 underline underline-offset-2 transition-colors"
-          >Privacy Policy</a>.
-        </p>
-      </div>
-    </Layouts.app>
