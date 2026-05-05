@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/nelsong6/infra-bootstrap.git
+    repoURL: https://github.com/nelsong6/frontman-selfhost.git
     targetRevision: main
-    path: k8s/frontman-selfhost
+    path: k8s
   destination:
     server: https://kubernetes.default.svc
     namespace: frontman-selfhost
