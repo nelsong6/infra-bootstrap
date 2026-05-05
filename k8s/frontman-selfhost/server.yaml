@@ -13,7 +13,7 @@ spec:
   template:
     metadata:
       annotations:
-        frontman-selfhost/auth-patch-revision: "cccc016"
+        frontman-selfhost/auth-patch-revision: "reason-log"
       labels:
         app: frontman-server
     spec:

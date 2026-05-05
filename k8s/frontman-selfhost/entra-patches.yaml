@@ -61,7 +61,9 @@ data:
           |> put_flash(:info, "Welcome!")
           |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
         else
-          _ ->
+          reason ->
+            Logger.warning("Entra sign in failed after callback: #{safe_failure(reason)}")
+
             conn
             |> cleanup()
             |> put_flash(:error, "Entra sign in failed.")
@@ -111,6 +113,15 @@ data:
 
       defp safe_entra_error(%{"error" => error}), do: error
       defp safe_entra_error(_), do: "unknown_error"
+
+      defp safe_failure({:error, %Ecto.Changeset{} = changeset}) do
+        "user_insert_failed: #{inspect(changeset.errors)}"
+      end
+
+      defp safe_failure({:error, reason}), do: inspect(reason)
+      defp safe_failure(nil), do: "missing_session_value"
+      defp safe_failure(other) when is_binary(other), do: "unexpected_string_value"
+      defp safe_failure(other), do: inspect(other)
 
       defp decode_claims(id_token) do
         case String.split(id_token, ".") do
