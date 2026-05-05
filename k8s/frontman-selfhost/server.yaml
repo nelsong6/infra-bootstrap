@@ -29,6 +29,10 @@ spec:
               rm -rf /var/lib/apt/lists/* /workspace/frontman
               git clone --depth=1 https://github.com/frontman-ai/frontman.git /workspace/frontman
               cd /workspace/frontman/apps/frontman_server
+              cp /frontman-entra-patches/entra_auth_controller.ex lib/frontman_server_web/controllers/entra_auth_controller.ex
+              cp /frontman-entra-patches/new.html.heex lib/frontman_server_web/controllers/user_session_html/new.html.heex
+              perl -0pi -e 's|get\("/", PageController, :home\)|get("/", PageController, :home)\n    get("/auth/entra", EntraAuthController, :request)|' lib/frontman_server_web/router.ex
+              perl -0pi -e 's|  def home\(conn, _params\) do|  def home(conn, %{"code" => _code} = params) do\n    FrontmanServerWeb.EntraAuthController.callback(conn, params)\n  end\n\n  def home(conn, %{"error" => _error} = params) do\n    FrontmanServerWeb.EntraAuthController.callback(conn, params)\n  end\n\n  def home(conn, _params) do|' lib/frontman_server_web/controllers/page_controller.ex
               cat >> config/runtime.exs <<'EXS'
 
               if config_env() == :dev do
@@ -69,6 +73,10 @@ spec:
           envFrom:
             - secretRef:
                 name: frontman-server-secrets
+          volumeMounts:
+            - name: entra-patches
+              mountPath: /frontman-entra-patches
+              readOnly: true
           ports:
             - name: http
               containerPort: 4000
@@ -80,6 +88,10 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 60
+      volumes:
+        - name: entra-patches
+          configMap:
+            name: frontman-entra-patches
 ---
 apiVersion: v1
 kind: Service
