@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/nelsong6/tank-operator.git
+    repoURL: https://github.com/nelsong6/mcp-argocd.git
     targetRevision: main
-    path: k8s-mcp-argocd
+    path: chart
   destination:
     server: https://kubernetes.default.svc
     namespace: mcp-argocd
