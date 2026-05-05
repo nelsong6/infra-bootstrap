@@ -12,6 +12,8 @@ spec:
       app: frontman-server
   template:
     metadata:
+      annotations:
+        frontman-selfhost/auth-patch-revision: "cccc016"
       labels:
         app: frontman-server
     spec:
