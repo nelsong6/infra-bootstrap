@@ -40,7 +40,7 @@ configs:
           id: aks-sa
           name: AKS Service Account
           config:
-            issuer: https://westus2.oic.prod-aks.azure.com/2236b5e4-81d2-4d82-bde5-17b1037999ea/26b44ac4-fc37-4146-bce4-af02fa5dd145/
+            issuer: https://westus2.oic.prod-aks.azure.com/2236b5e4-81d2-4d82-bde5-17b1037999ea/5aced6d5-4299-421b-84a9-6638aebbf4f0/
             clientID: argocd-mcp
             clientSecret: unused-public-client
             scopes:
