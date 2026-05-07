@@ -138,6 +138,20 @@ resource "azuread_application_federated_identity_credential" "github_actions_pro
   subject        = "repo:nelsong6/${var.repo_name}:environment:prod"
 }
 
+# OIDC federated credential for dev environment. Workflows that set
+# `environment: dev` (typically workflow_dispatch on a feature branch)
+# get an OIDC token with `sub = repo:nelsong6/<repo>:environment:dev`,
+# matched here. Branch-scope policy lives on the GitHub Environment's
+# allowed-branches list — wildcard there is fine because the env's name
+# is the trust boundary, not the FIC subject.
+resource "azuread_application_federated_identity_credential" "github_actions_dev" {
+  application_id = var.application_id
+  display_name   = "${var.repo_name}-github-actions-dev"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://token.actions.githubusercontent.com"
+  subject        = "repo:nelsong6/${var.repo_name}:environment:dev"
+}
+
 # GitHub Actions variables
 resource "github_actions_variable" "tfstate_storage_account" {
   repository    = var.repo_name
