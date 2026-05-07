@@ -156,6 +156,34 @@ resource "azuread_application_federated_identity_credential" "github_actions_pr"
   subject        = "repo:${github_repository.repo.full_name}:pull_request"
 }
 
+# Per-environment FICs. Workflows that set `environment: prod` (push
+# to default branch) or `environment: dev` (workflow_dispatch on a
+# feature branch, etc.) get an OIDC token with
+# `sub = repo:.../environment:<env>`, which Azure validates against
+# these credentials. Branch-scope policy lives in the GitHub
+# Environment definition (allowed branches), not on the FIC subject —
+# so the dev path can be widened/narrowed there without re-applying
+# tofu.
+#
+# `github_actions_main` (above) stays during the migration so workflows
+# without an `environment:` clause keep authenticating. Once every
+# image-build workflow is converted, that legacy FIC can be removed.
+resource "azuread_application_federated_identity_credential" "github_actions_prod" {
+  application_id = azuread_application.app.id
+  display_name   = "${var.name}-github-actions-env-prod"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://token.actions.githubusercontent.com"
+  subject        = "repo:${github_repository.repo.full_name}:environment:prod"
+}
+
+resource "azuread_application_federated_identity_credential" "github_actions_dev" {
+  application_id = azuread_application.app.id
+  display_name   = "${var.name}-github-actions-env-dev"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://token.actions.githubusercontent.com"
+  subject        = "repo:${github_repository.repo.full_name}:environment:dev"
+}
+
 resource "github_actions_variable" "key_vault_name" {
   repository    = github_repository.repo.name
   variable_name = "KEY_VAULT_NAME"
