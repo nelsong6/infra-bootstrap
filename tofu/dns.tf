@@ -56,7 +56,7 @@ resource "azurerm_dns_mx_record" "email" {
 
 }
 
-# Root domain TXT records (SPF, Google site verification, landing page SWA validation)
+# Root domain TXT records (SPF, Google site verification)
 resource "azurerm_dns_txt_record" "apex" {
   name                = "@" # Root domain
   zone_name           = azurerm_dns_zone.main.name
@@ -69,13 +69,6 @@ resource "azurerm_dns_txt_record" "apex" {
 
   record {
     value = "google-site-verification=bIQ8zuUK_DUCCoYi8zUF1CxK_Hn-1Ipah9vgn4PN2z4"
-  }
-
-  dynamic "record" {
-    for_each = azurerm_static_web_app_custom_domain.landing.validation_token != "" ? [1] : []
-    content {
-      value = azurerm_static_web_app_custom_domain.landing.validation_token
-    }
   }
 
 }

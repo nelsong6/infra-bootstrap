@@ -105,20 +105,6 @@ output "auth0_connection_apple_id" {
 }
 
 # ============================================================================
-# Landing Page Outputs
-# ============================================================================
-
-output "landing_page_resource_group_name" {
-  value       = azurerm_resource_group.landing.name
-  description = "Resource group for the landing page Static Web App"
-}
-
-output "landing_page_static_web_app_name" {
-  value       = azurerm_static_web_app.landing.name
-  description = "Name of the landing page Static Web App"
-}
-
-# ============================================================================
 # AKS Outputs
 # ============================================================================
 
