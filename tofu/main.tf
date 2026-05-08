@@ -227,8 +227,9 @@ import {
   id = "card-utility-stats"
 }
 
-# mcp-tank-operator: repo was created manually in a prior session before
-# infra-bootstrap managed it. Import so tofu adopts it without re-creating.
+# mcp-tank-operator: repo was created by a prior session before tofu
+# codified it. Import so tofu adopts the existing repo instead of trying
+# to create a duplicate.
 import {
   to = module.app["mcp-tank-operator"].github_repository.repo
   id = "mcp-tank-operator"
