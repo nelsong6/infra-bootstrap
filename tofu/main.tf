@@ -156,8 +156,12 @@ locals {
     "my-homepage"       = ["fzt-downstream"]
   }
   app_pages_branch = {}
+  # Let each app CI principal grant Microsoft Graph app-role assignments,
+  # including tenant-wide roles that a downstream app stack may need.
+  default_graph_app_role_values = toset([
+    "AppRoleAssignment.ReadWrite.All",
+  ])
   extra_graph_app_role_values = {
-    "tank-operator" = toset(["AppRoleAssignment.ReadWrite.All"])
   }
 }
 
@@ -293,5 +297,5 @@ module "app" {
   arm_tenant_id               = data.azurerm_client_config.current.tenant_id
   arm_subscription_id         = data.azurerm_client_config.current.subscription_id
   google_client_id            = data.azurerm_key_vault_secret.google_oauth_client_id.value
-  extra_graph_app_role_values = lookup(local.extra_graph_app_role_values, each.key, toset([]))
+  extra_graph_app_role_values = setunion(local.default_graph_app_role_values, lookup(local.extra_graph_app_role_values, each.key, toset([])))
 }
