@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/diploidian/void_drifter.git
+    repoURL: https://github.com/nelsong6/void-drifter-infra.git
     targetRevision: main
     path: k8s
   destination:
