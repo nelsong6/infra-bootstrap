@@ -123,7 +123,7 @@ locals {
   # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
   # push images). Expand as each app migrates off the shared api onto its
   # own K8s Deployment.
-  k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung", "mcp-argocd", "mcp-azure-admin", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator"])
+  k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung", "mcp-argocd", "mcp-azure-admin", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "void-drifter-infra"])
 
   # Subset of k8s_apps whose pods federate to infra-shared-identity via
   # `system:serviceaccount:<app>:infra-shared`. Empty: every app has
@@ -144,16 +144,17 @@ locals {
     "fzt" = "main"
   }
   app_topics = {
-    "fzt-desktop"       = ["fzt-downstream"]
-    "fzt-showcase"      = ["fzt-downstream"]
-    "mcp-argocd"        = ["mcp-server", "tank-operator"]
-    "mcp-azure-admin"   = ["mcp-server", "tank-operator"]
-    "mcp-github"        = ["mcp-server", "tank-operator"]
-    "mcp-glimmung"      = ["mcp-server", "glimmung"]
-    "mcp-k8s"           = ["mcp-server", "tank-operator"]
-    "mcp-tank-operator" = ["mcp-server", "tank-operator"]
-    "platform-mcp"      = ["mcp-server", "tank-operator"]
-    "my-homepage"       = ["fzt-downstream"]
+    "fzt-desktop"        = ["fzt-downstream"]
+    "fzt-showcase"       = ["fzt-downstream"]
+    "mcp-argocd"         = ["mcp-server", "tank-operator"]
+    "mcp-azure-admin"    = ["mcp-server", "tank-operator"]
+    "mcp-github"         = ["mcp-server", "tank-operator"]
+    "mcp-glimmung"       = ["mcp-server", "glimmung"]
+    "mcp-k8s"            = ["mcp-server", "tank-operator"]
+    "mcp-tank-operator"  = ["mcp-server", "tank-operator"]
+    "platform-mcp"       = ["mcp-server", "tank-operator"]
+    "my-homepage"        = ["fzt-downstream"]
+    "void-drifter-infra" = ["void-drifter"]
   }
   app_pages_branch = {}
   # Let each app CI principal grant Microsoft Graph app-role assignments,
@@ -281,6 +282,7 @@ module "app" {
     "plant-agent",
     "platform-mcp",
     "tank-operator",
+    "void-drifter-infra",
   ])
 
   name                        = each.key
