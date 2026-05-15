@@ -1,19 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mcp-argocd
+  name: loki
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/nelsong6/mcp-argocd.git
+    repoURL: https://github.com/nelsong6/osms.git
     targetRevision: main
-    path: chart
+    path: k8s/loki
   destination:
     server: https://kubernetes.default.svc
-    namespace: mcp-argocd
+    namespace: loki
   syncPolicy:
     automated:
       prune: true

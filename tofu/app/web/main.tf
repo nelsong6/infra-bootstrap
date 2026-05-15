@@ -60,6 +60,11 @@ variable "google_client_id" {
   type = string
 }
 
+variable "extra_graph_app_role_values" {
+  type    = set(string)
+  default = []
+}
+
 # Contributor (subscription scope)
 resource "azurerm_role_assignment" "contributor" {
   scope                = "/subscriptions/${var.arm_subscription_id}"
@@ -116,6 +121,14 @@ resource "azuread_app_role_assignment" "app_readwrite_owned" {
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
+resource "azuread_app_role_assignment" "extra_graph_app_roles" {
+  for_each = var.extra_graph_app_role_values
+
+  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids[each.value]
+  principal_object_id = var.principal_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+}
+
 # OIDC federated credential for prod environment
 resource "azuread_application_federated_identity_credential" "github_actions_prod" {
   application_id = var.application_id
@@ -123,6 +136,20 @@ resource "azuread_application_federated_identity_credential" "github_actions_pro
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://token.actions.githubusercontent.com"
   subject        = "repo:nelsong6/${var.repo_name}:environment:prod"
+}
+
+# OIDC federated credential for dev environment. Workflows that set
+# `environment: dev` (typically workflow_dispatch on a feature branch)
+# get an OIDC token with `sub = repo:nelsong6/<repo>:environment:dev`,
+# matched here. Branch-scope policy lives on the GitHub Environment's
+# allowed-branches list — wildcard there is fine because the env's name
+# is the trust boundary, not the FIC subject.
+resource "azuread_application_federated_identity_credential" "github_actions_dev" {
+  application_id = var.application_id
+  display_name   = "${var.repo_name}-github-actions-dev"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://token.actions.githubusercontent.com"
+  subject        = "repo:nelsong6/${var.repo_name}:environment:dev"
 }
 
 # GitHub Actions variables

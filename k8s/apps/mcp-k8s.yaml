@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/nelsong6/tank-operator.git
+    repoURL: https://github.com/nelsong6/mcp-k8s.git
     targetRevision: main
-    path: k8s-mcp-k8s
+    path: chart
   destination:
     server: https://kubernetes.default.svc
     namespace: mcp-k8s

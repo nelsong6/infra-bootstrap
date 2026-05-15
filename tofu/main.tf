@@ -118,12 +118,12 @@ resource "azurerm_role_assignment" "nelson_storage" {
 }
 
 locals {
-  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop"])
+  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop", "mcp-argocd", "mcp-azure-admin", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "platform-mcp"])
 
   # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
   # push images). Expand as each app migrates off the shared api onto its
   # own K8s Deployment.
-  k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung"])
+  k8s_apps = toset(["ambience", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung", "mcp-argocd", "mcp-azure-admin", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "void-drifter-infra"])
 
   # Subset of k8s_apps whose pods federate to infra-shared-identity via
   # `system:serviceaccount:<app>:infra-shared`. Empty: every app has
@@ -144,11 +144,26 @@ locals {
     "fzt" = "main"
   }
   app_topics = {
-    "fzt-desktop"  = ["fzt-downstream"]
-    "fzt-showcase" = ["fzt-downstream"]
-    "my-homepage"  = ["fzt-downstream"]
+    "fzt-desktop"        = ["fzt-downstream"]
+    "fzt-showcase"       = ["fzt-downstream"]
+    "mcp-argocd"         = ["mcp-server", "tank-operator"]
+    "mcp-azure-admin"    = ["mcp-server", "tank-operator"]
+    "mcp-github"         = ["mcp-server", "tank-operator"]
+    "mcp-glimmung"       = ["mcp-server", "glimmung"]
+    "mcp-k8s"            = ["mcp-server", "tank-operator"]
+    "mcp-tank-operator"  = ["mcp-server", "tank-operator"]
+    "platform-mcp"       = ["mcp-server", "tank-operator"]
+    "my-homepage"        = ["fzt-downstream"]
+    "void-drifter-infra" = ["void-drifter"]
   }
   app_pages_branch = {}
+  # Let each app CI principal grant Microsoft Graph app-role assignments,
+  # including tenant-wide roles that a downstream app stack may need.
+  default_graph_app_role_values = toset([
+    "AppRoleAssignment.ReadWrite.All",
+  ])
+  extra_graph_app_role_values = {
+  }
 }
 
 resource "random_password" "card_utility_stats_vm_admin" {
@@ -217,6 +232,9 @@ import {
   id = "card-utility-stats"
 }
 
+# mcp-tank-operator import lives in imports.tf alongside other recently
+# imported pre-existing repos.
+
 moved {
   from = module.app["fuzzy-tiered"]
   to   = module.app["fzt"]
@@ -254,23 +272,32 @@ module "app" {
     "kill-me",
     "lights",
     "llm-explorer",
+    "mcp-argocd",
+    "mcp-azure-admin",
+    "mcp-github",
+    "mcp-glimmung",
+    "mcp-k8s",
+    "mcp-tank-operator",
     "my-homepage",
     "plant-agent",
+    "platform-mcp",
     "tank-operator",
+    "void-drifter-infra",
   ])
 
-  name                       = each.key
-  ci_only                    = contains(local.ci_only_apps, each.key)
-  default_branch             = lookup(local.app_default_branch, each.key, "main")
-  topics                     = lookup(local.app_topics, each.key, [])
-  pages_branch               = lookup(local.app_pages_branch, each.key, "")
-  key_vault_name             = data.azurerm_key_vault.main.name
-  key_vault_id               = data.azurerm_key_vault.main.id
-  app_config_id              = azurerm_app_configuration.main.id
-  cosmos_account_id          = azurerm_cosmosdb_account.serverless.id
-  cosmos_account_name        = azurerm_cosmosdb_account.serverless.name
-  cosmos_resource_group_name = data.azurerm_resource_group.main.name
-  arm_tenant_id              = data.azurerm_client_config.current.tenant_id
-  arm_subscription_id        = data.azurerm_client_config.current.subscription_id
-  google_client_id           = data.azurerm_key_vault_secret.google_oauth_client_id.value
+  name                        = each.key
+  ci_only                     = contains(local.ci_only_apps, each.key)
+  default_branch              = lookup(local.app_default_branch, each.key, "main")
+  topics                      = lookup(local.app_topics, each.key, [])
+  pages_branch                = lookup(local.app_pages_branch, each.key, "")
+  key_vault_name              = data.azurerm_key_vault.main.name
+  key_vault_id                = data.azurerm_key_vault.main.id
+  app_config_id               = azurerm_app_configuration.main.id
+  cosmos_account_id           = azurerm_cosmosdb_account.serverless.id
+  cosmos_account_name         = azurerm_cosmosdb_account.serverless.name
+  cosmos_resource_group_name  = data.azurerm_resource_group.main.name
+  arm_tenant_id               = data.azurerm_client_config.current.tenant_id
+  arm_subscription_id         = data.azurerm_client_config.current.subscription_id
+  google_client_id            = data.azurerm_key_vault_secret.google_oauth_client_id.value
+  extra_graph_app_role_values = setunion(local.default_graph_app_role_values, lookup(local.extra_graph_app_role_values, each.key, toset([])))
 }

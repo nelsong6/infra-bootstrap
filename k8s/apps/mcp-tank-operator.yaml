@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mcp-argocd
+  name: mcp-tank-operator
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/nelsong6/mcp-argocd.git
+    repoURL: https://github.com/nelsong6/mcp-tank-operator.git
     targetRevision: main
     path: chart
   destination:
     server: https://kubernetes.default.svc
-    namespace: mcp-argocd
+    namespace: mcp-tank-operator
   syncPolicy:
     automated:
       prune: true

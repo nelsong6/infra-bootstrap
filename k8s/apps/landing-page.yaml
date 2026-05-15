@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mcp-argocd
+  name: landing-page
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/nelsong6/mcp-argocd.git
+    repoURL: https://github.com/nelsong6/landing-page.git
     targetRevision: main
-    path: chart
+    path: k8s
   destination:
     server: https://kubernetes.default.svc
-    namespace: mcp-argocd
+    namespace: landing-page
   syncPolicy:
     automated:
       prune: true
