@@ -9,10 +9,6 @@ terraform {
       source  = "hashicorp/azuread"
       version = "= 3.8.0"
     }
-    auth0 = {
-      source  = "auth0/auth0"
-      version = "= 1.40.0"
-    }
     github = {
       source  = "integrations/github"
       version = "= 6.12.1"
