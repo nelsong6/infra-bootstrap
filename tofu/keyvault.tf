@@ -23,11 +23,6 @@ resource "azurerm_key_vault_secret" "external_dns_azure_config" {
   })
 }
 
-data "azurerm_key_vault_secret" "auth0_client_secret" {
-  name         = "auth0-client-secret"
-  key_vault_id = data.azurerm_key_vault.main.id
-}
-
 data "azurerm_key_vault_secret" "github_pat" {
   name         = "github-pat"
   key_vault_id = data.azurerm_key_vault.main.id
