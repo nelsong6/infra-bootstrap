@@ -1,0 +1,43 @@
+# NATS deployment for the tank-operator session bus.
+#
+# JetStream is configured memory-only — no PVCs, no per-VM data-disk
+# attachment cost. tank-operator treats NATS as live transport for the
+# session command/event fabric per docs/product-inspirations.md
+# (durable state lives in Cosmos; NATS just wakes clients/runners).
+# Memory-only matches that durability scope: streams survive
+# orchestrator rollouts and runner-process restarts inside an
+# otherwise live session pod, and lose state only when both NATS pods
+# restart simultaneously — outside the inspirations doc's durability
+# boundary.
+#
+# memoryStore.maxSize caps each replica's JetStream RAM use to prevent
+# a runaway producer from OOM-killing the pod. At ~256 MiB per replica
+# and 2 replicas, total JetStream memory budget is ~512 MiB cluster-wide.
+nats:
+  fullnameOverride: tank-nats
+  config:
+    cluster:
+      enabled: true
+      replicas: 2
+    jetstream:
+      enabled: true
+      fileStore:
+        enabled: false
+      memoryStore:
+        enabled: true
+        maxSize: 256Mi
+    merge:
+      authorization:
+        token: << $NATS_TOKEN >>
+  container:
+    image:
+      repository: nats
+      tag: 2.14.0-alpine
+    env:
+      NATS_TOKEN:
+        valueFrom:
+          secretKeyRef:
+            name: tank-nats-auth
+            key: token
+  promExporter:
+    enabled: true
