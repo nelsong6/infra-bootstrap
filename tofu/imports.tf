@@ -13,7 +13,10 @@ import {
   id = "mcp-tank-operator"
 }
 
+# mcp-auth: pre-created via `gh repo create` so the scaffold could land
+# before this PR — see initial commit in nelsong6/mcp-auth. Tofu adopts
+# the existing repo on next apply.
 import {
-  to = azurerm_key_vault_secret.romaine_life_admin_emails
-  id = "https://romaine-kv.vault.azure.net/secrets/romaine-life-admin-emails/5f47d683bbe34b57bead01fd495a9c62"
+  to = module.app["mcp-auth"].github_repository.repo
+  id = "mcp-auth"
 }
