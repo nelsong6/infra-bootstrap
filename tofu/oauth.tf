@@ -122,17 +122,6 @@ resource "azurerm_key_vault_secret" "argocd_oidc_client_secret" {
   key_vault_id = data.azurerm_key_vault.main.id
 }
 
-resource "azurerm_key_vault_secret" "oauth2_proxy_cookie_secret" {
-  name         = "oauth2-proxy-cookie-secret"
-  value        = random_password.oauth2_proxy_cookie.result
-  key_vault_id = data.azurerm_key_vault.main.id
-}
-
-resource "random_password" "oauth2_proxy_cookie" {
-  length  = 32
-  special = false
-}
-
 # ============================================================================
 # Google "Sign in with Google" (shared across all projects)
 # ============================================================================
