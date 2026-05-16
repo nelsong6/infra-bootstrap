@@ -92,8 +92,8 @@ resource "azurerm_role_assignment" "shared_identity_keyvault" {
 # cert-manager fed creds. App Configuration Data Reader and Storage Blob
 # Data Contributor used to be assigned here for apps' shared use; both
 # were removed once every app moved to its own per-app identity (see
-# kill-me/tofu/identity.tf, plant-agent/tofu/identity.tf, etc., plus
-# fzt-frontend-identity.tf and llm-explorer-identity.tf in this repo).
+# kill-me/tofu/identity.tf etc., plus fzt-frontend-identity.tf and
+# llm-explorer-identity.tf in this repo).
 # If a future system service needs either, narrow it to its own
 # identity rather than re-broadening this one.
 
@@ -110,7 +110,7 @@ locals {
   # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
   # push images). Expand as each app migrates off the shared api onto its
   # own K8s Deployment.
-  k8s_apps = toset(["ambience", "auth", "investing", "house-hunt", "kill-me", "plant-agent", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung", "mcp-argocd", "mcp-auth", "mcp-azure-admin", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "void-drifter-infra"])
+  k8s_apps = toset(["ambience", "auth", "investing", "house-hunt", "kill-me", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung", "mcp-argocd", "mcp-auth", "mcp-azure-admin", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "void-drifter-infra"])
 
   # Subset of k8s_apps whose pods federate to infra-shared-identity via
   # `system:serviceaccount:<app>:infra-shared`. Empty: every app has
@@ -269,7 +269,6 @@ module "app" {
     "mcp-k8s",
     "mcp-tank-operator",
     "my-homepage",
-    "plant-agent",
     "platform-mcp",
     "tank-operator",
     "void-drifter-infra",
