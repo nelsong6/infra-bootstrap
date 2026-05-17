@@ -1,31 +1,14 @@
 # ============================================================================
-# State moves — resources extracted from this module into the web sub-module.
-# These tell OpenTofu where existing state objects now live.
+# State moves
 # ============================================================================
-
-moved {
-  from = azurerm_role_assignment.contributor
-  to   = module.web[0].azurerm_role_assignment.contributor
-}
-
-moved {
-  from = azurerm_role_assignment.rbac_admin
-  to   = module.web[0].azurerm_role_assignment.rbac_admin
-}
-
-moved {
-  from = azurerm_role_assignment.keyvault_secrets_officer
-  to   = module.web[0].azurerm_role_assignment.keyvault_secrets_officer
-}
+#
+# Historical (parent → web): resources that originally lived in the parent
+# module and were extracted into the web sub-module. Kept as long as the
+# `to` address is still a resource in `tofu/app/web/main.tf`.
 
 moved {
   from = azurerm_role_assignment.appconfig_data_owner
   to   = module.web[0].azurerm_role_assignment.appconfig_data_owner
-}
-
-moved {
-  from = azurerm_role_assignment.storage_blob_reader
-  to   = module.web[0].azurerm_role_assignment.storage_blob_reader
 }
 
 moved {
@@ -49,15 +32,11 @@ moved {
 }
 
 # ============================================================================
-# Reverse moves — resources extracted from the web sub-module back into the
-# parent module, now gated on opt-in booleans so ci_only apps can use them.
-# ============================================================================
-#
-# Each pair pulls a resource out of `module.web[0]` and back to the parent
-# address with a `count` index, paired with the corresponding `var.<flag>`
-# in main.tf. State migrations are no-ops in Azure when the flag is true
-# for the same set of apps that previously had ci_only = false; they
-# only manifest as creates for newly-opted-in ci_only apps.
+# Reverse (web → parent, gated): resources pulled back out of the web
+# sub-module into the parent, now gated by an opt-in `count = var.<flag>`.
+# Lets ci_only apps opt in to capabilities individually instead of needing
+# the entire web bundle. Paired with the corresponding `var.<flag>` declared
+# in `app/main.tf`.
 
 moved {
   from = module.web[0].azurerm_role_assignment.storage_blob_contributor
