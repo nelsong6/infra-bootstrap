@@ -68,3 +68,18 @@ moved {
   from = module.web[0].github_actions_variable.tfstate_storage_account
   to   = github_actions_variable.tfstate_storage_account[0]
 }
+
+moved {
+  from = module.web[0].azurerm_role_assignment.contributor
+  to   = azurerm_role_assignment.subscription_contributor[0]
+}
+
+moved {
+  from = module.web[0].azurerm_role_assignment.rbac_admin
+  to   = azurerm_role_assignment.rbac_admin[0]
+}
+
+moved {
+  from = module.web[0].azurerm_role_assignment.keyvault_secrets_officer
+  to   = azurerm_role_assignment.keyvault_secrets_officer[0]
+}

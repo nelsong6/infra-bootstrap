@@ -59,6 +59,24 @@ variable "tfstate_access" {
   default     = false
 }
 
+variable "manages_subscription_resources" {
+  description = "When true, grant Contributor at subscription scope so this app's CI SP can create/update/destroy ordinary ARM resources (managed identities, federated credentials, key vault secrets at control-plane, Cosmos data-plane role assignments, Postgres Flexible Server admins, etc.). Excludes role assignment write — that's gated separately on `manages_role_assignments`. Required for any repo whose `tofu` plan creates Azure resources."
+  type        = bool
+  default     = false
+}
+
+variable "manages_role_assignments" {
+  description = "When true, grant Role Based Access Control Administrator at subscription scope so this app's CI SP can create/destroy `azurerm_role_assignment` resources. Contributor explicitly excludes role assignment write, so apps whose `tofu` declares role assignments need this in addition to `manages_subscription_resources`."
+  type        = bool
+  default     = false
+}
+
+variable "manages_keyvault_secrets" {
+  description = "When true, grant Key Vault Secrets Officer (read+write data-plane) on `var.key_vault_id`. When false (default), the `ci_only` path grants Key Vault Secrets User (read-only) instead. Required for any repo whose `tofu` writes KV secrets."
+  type        = bool
+  default     = false
+}
+
 variable "topics" {
   description = "GitHub repository topics for categorization and discovery."
   type        = list(string)
@@ -142,11 +160,43 @@ resource "azuread_service_principal" "app" {
   client_id = azuread_application.app.client_id
 }
 
-# Key Vault Secrets User (read-only) — ci_only apps get this instead of Officer
+# Key Vault Secrets User (read-only) — the default for any app that hasn't
+# opted in to managing secrets. Mutually exclusive with the Officer grant
+# below; opting `manages_keyvault_secrets = true` swaps User for Officer.
 resource "azurerm_role_assignment" "keyvault_secrets_user" {
-  count                = var.ci_only ? 1 : 0
+  count                = var.manages_keyvault_secrets ? 0 : 1
   scope                = var.key_vault_id
   role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_service_principal.app.object_id
+}
+
+# Key Vault Secrets Officer (read+write data-plane). Opt-in via
+# var.manages_keyvault_secrets.
+resource "azurerm_role_assignment" "keyvault_secrets_officer" {
+  count                = var.manages_keyvault_secrets ? 1 : 0
+  scope                = var.key_vault_id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = azuread_service_principal.app.object_id
+}
+
+# Subscription Contributor — broad ARM resource management. Opt-in via
+# var.manages_subscription_resources. Does NOT grant role assignment
+# write (that's gated on var.manages_role_assignments via the resource
+# below); Contributor explicitly excludes Microsoft.Authorization/*.
+resource "azurerm_role_assignment" "subscription_contributor" {
+  count                = var.manages_subscription_resources ? 1 : 0
+  scope                = "/subscriptions/${var.arm_subscription_id}"
+  role_definition_name = "Contributor"
+  principal_id         = azuread_service_principal.app.object_id
+}
+
+# Role Based Access Control Administrator — needed to create/destroy
+# `azurerm_role_assignment` resources. Opt-in via
+# var.manages_role_assignments.
+resource "azurerm_role_assignment" "rbac_admin" {
+  count                = var.manages_role_assignments ? 1 : 0
+  scope                = "/subscriptions/${var.arm_subscription_id}"
+  role_definition_name = "Role Based Access Control Administrator"
   principal_id         = azuread_service_principal.app.object_id
 }
 

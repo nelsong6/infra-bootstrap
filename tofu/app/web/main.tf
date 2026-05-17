@@ -65,27 +65,6 @@ variable "extra_graph_app_role_values" {
   default = []
 }
 
-# Contributor (subscription scope)
-resource "azurerm_role_assignment" "contributor" {
-  scope                = "/subscriptions/${var.arm_subscription_id}"
-  role_definition_name = "Contributor"
-  principal_id         = var.principal_id
-}
-
-# RBAC Admin (subscription scope)
-resource "azurerm_role_assignment" "rbac_admin" {
-  scope                = "/subscriptions/${var.arm_subscription_id}"
-  role_definition_name = "Role Based Access Control Administrator"
-  principal_id         = var.principal_id
-}
-
-# Key Vault Secrets Officer (read + write)
-resource "azurerm_role_assignment" "keyvault_secrets_officer" {
-  scope                = var.key_vault_id
-  role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = var.principal_id
-}
-
 # App Configuration Data Owner
 resource "azurerm_role_assignment" "appconfig_data_owner" {
   scope                = var.app_config_id
