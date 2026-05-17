@@ -300,10 +300,10 @@ module "app" {
     "void-drifter-infra",
   ])
 
-  name           = each.key
-  ci_only        = contains(local.ci_only_apps, each.key)
-  tfstate_access = !contains(local.ci_only_apps, each.key) || contains(local.ci_only_tfstate_opt_ins, each.key)
-  default_branch = lookup(local.app_default_branch, each.key, "main")
+  name                        = each.key
+  ci_only                     = contains(local.ci_only_apps, each.key)
+  tfstate_access              = !contains(local.ci_only_apps, each.key) || contains(local.ci_only_tfstate_opt_ins, each.key)
+  default_branch              = lookup(local.app_default_branch, each.key, "main")
   topics                      = lookup(local.app_topics, each.key, [])
   pages_branch                = lookup(local.app_pages_branch, each.key, "")
   key_vault_name              = data.azurerm_key_vault.main.name
