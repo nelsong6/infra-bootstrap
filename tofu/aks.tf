@@ -134,9 +134,9 @@ resource "azurerm_kubernetes_cluster" "cluster" {
   }
 }
 
-# Allows the guarded mcp-azure-admin server to use AKS Run Command against the
+# Allows the guarded mcp-azure-personal server to use AKS Run Command against the
 # dedicated migration cluster without granting write access to the whole subscription.
-resource "azurerm_role_assignment" "mcp_azure_admin_cluster_contributor" {
+resource "azurerm_role_assignment" "mcp_azure_personal_cluster_contributor" {
   provider = azurerm.cluster
   count    = local.cluster_uses_dedicated_subscription ? 1 : 0
 
@@ -144,6 +144,15 @@ resource "azurerm_role_assignment" "mcp_azure_admin_cluster_contributor" {
   role_definition_name = "Contributor"
   principal_id         = "d63582e4-a494-4f84-b1d2-ae74e125a8ed"
   principal_type       = "ServicePrincipal"
+}
+
+# Address rename following the `mcp-azure-admin` → `mcp-azure-personal`
+# repo/key rename. The `count = 0` path means this never landed in state on
+# the live cluster, but the moved block costs nothing and keeps the dedicated
+# migration cluster bring-up clean.
+moved {
+  from = azurerm_role_assignment.mcp_azure_admin_cluster_contributor
+  to   = azurerm_role_assignment.mcp_azure_personal_cluster_contributor
 }
 
 # ============================================================================

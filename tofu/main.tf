@@ -105,12 +105,12 @@ resource "azurerm_role_assignment" "nelson_storage" {
 }
 
 locals {
-  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop", "mcp-argocd", "mcp-auth", "mcp-azure-admin", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "platform-mcp"])
+  ci_only_apps = toset(["fzt", "fzt-terminal", "fzt-frontend", "fzt-automate", "fzt-browser", "fzt-picker", "fzt-desktop", "mcp-argocd", "mcp-auth", "mcp-azure-personal", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "platform-mcp"])
 
   # Apps deployed on AKS — gives the app SP AcrPush on romainecr (for CI to
   # push images). Expand as each app migrates off the shared api onto its
   # own K8s Deployment.
-  k8s_apps = toset(["ambience", "auth", "house-hunt", "kill-me", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung", "hermes", "mcp-argocd", "mcp-auth", "mcp-azure-admin", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "void-drifter-infra"])
+  k8s_apps = toset(["ambience", "auth", "house-hunt", "kill-me", "fzt-frontend", "my-homepage", "diagrams", "llm-explorer", "tank-operator", "glimmung", "hermes", "mcp-argocd", "mcp-auth", "mcp-azure-personal", "mcp-github", "mcp-glimmung", "mcp-k8s", "mcp-tank-operator", "void-drifter-infra"])
 
   # Subset of k8s_apps whose pods federate to infra-shared-identity via
   # `system:serviceaccount:<app>:infra-shared`. Empty: every app has
@@ -136,7 +136,7 @@ locals {
     "hermes"             = ["hermes-agent", "nous-research", "ai-agent"]
     "mcp-argocd"         = ["mcp-server", "tank-operator"]
     "mcp-auth"           = ["mcp-server", "tank-operator", "auth"]
-    "mcp-azure-admin"    = ["mcp-server", "tank-operator"]
+    "mcp-azure-personal" = ["mcp-server", "tank-operator"]
     "mcp-github"         = ["mcp-server", "tank-operator"]
     "mcp-glimmung"       = ["mcp-server", "glimmung"]
     "mcp-k8s"            = ["mcp-server", "tank-operator"]
@@ -239,6 +239,21 @@ moved {
   to   = module.app["diagrams"]
 }
 
+# mcp-azure-personal: repo was originally created via the for_each as
+# "mcp-azure-admin" on 2026-05-05, then renamed on github.com via
+# nelsong6/mcp-azure-personal#1 the same day. The for_each key never
+# followed, so FIC subjects and the AAD application display_name
+# remained stale (the FIC subject mismatch is why workload identity
+# stopped working after the recent chart namespace rename surfaced the
+# regression). Rename the for_each key — the github provider treats
+# `github_repository.name` changes as in-place via PATCH, so the repo's
+# numeric id and the per-app SP's client_id (vars.ARM_CLIENT_ID on the
+# downstream repo) are preserved.
+moved {
+  from = module.app["mcp-azure-admin"]
+  to   = module.app["mcp-azure-personal"]
+}
+
 module "app" {
   source = "./app"
   for_each = toset([
@@ -264,7 +279,7 @@ module "app" {
     "llm-explorer",
     "mcp-argocd",
     "mcp-auth",
-    "mcp-azure-admin",
+    "mcp-azure-personal",
     "mcp-github",
     "mcp-glimmung",
     "mcp-k8s",
