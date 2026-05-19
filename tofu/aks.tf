@@ -88,6 +88,33 @@ moved {
 }
 
 # ============================================================================
+# Temporary User Node Pool — Standard_E2bs_v5 (memory-optimized burstable)
+# ============================================================================
+# Kept during the system-pool resize so the cluster has enough capacity while
+# the default `system` pool moves from B-family to E-family. Once the system
+# pool is confirmed on Standard_E2bs_v5 and workloads have been drained back
+# off this pool, remove this resource in a follow-up change.
+# ============================================================================
+
+resource "azurerm_kubernetes_cluster_node_pool" "cluster_user" {
+  provider = azurerm.cluster
+
+  name                  = "user"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.cluster.id
+  vm_size               = "Standard_E2bs_v5"
+  node_count            = 3
+  os_disk_size_gb       = 128
+  vnet_subnet_id        = azurerm_subnet.cluster_aks_nodes.id
+  mode                  = "User"
+
+  upgrade_settings {
+    drain_timeout_in_minutes      = 0
+    max_surge                     = "33%"
+    node_soak_duration_in_minutes = 0
+  }
+}
+
+# ============================================================================
 # Workload Identity — Federated Credential for Shared Identity
 # ============================================================================
 # Bridges the existing infra-shared-identity (which already has Cosmos DB,
